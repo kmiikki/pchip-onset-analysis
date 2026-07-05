@@ -1,0 +1,45 @@
+BW PCHIP workflow log
+====================
+
+analysis_dir: /mnt/pchip/examples/synthetic-rgb-tr
+pchip_dir:    /mnt/pchip/examples/synthetic-rgb-tr/pchip
+
+$ (cd /mnt/pchip/examples/synthetic-rgb-tr && python3 /mnt/pchip/scripts/xy-pchip.py rgb-tr.csv --xcol 'Tr (°C)' --ycol BW --reverse-x --save-csv --outstem pchip/bw-raw-vs-temp-pchip --xlabel 'Temperature (°C) - cooling' --ylabel BW --title 'BW vs. Temperature - raw + PCHIP')
+Input CSV:          rgb-tr.csv
+Selected columns:   X='Tr (°C)', Y='BW'
+Output stem:        pchip/bw-raw-vs-temp-pchip
+Wrote plot:         pchip/bw-raw-vs-temp-pchip.png
+Wrote PCHIP CSV:     pchip/bw-raw-vs-temp-pchip.csv
+[exit code: 0]
+
+$ (cd /mnt/pchip/examples/synthetic-rgb-tr && python3 /mnt/pchip/scripts/xy-pchip.py rgb-tr-sg.csv --xcol 'Tr (°C)' --ycol BW_smooth --reverse-x --save-csv --outstem pchip/bw-sg-vs-temp-pchip --xlabel 'Temperature (°C) - cooling' --ylabel BW_smooth --title 'BW vs. Temperature - SG + PCHIP')
+Input CSV:          rgb-tr-sg.csv
+Selected columns:   X='Tr (°C)', Y='BW_smooth'
+Output stem:        pchip/bw-sg-vs-temp-pchip
+Wrote plot:         pchip/bw-sg-vs-temp-pchip.png
+Wrote PCHIP CSV:     pchip/bw-sg-vs-temp-pchip.csv
+[exit code: 0]
+
+$ (cd /mnt/pchip/examples/synthetic-rgb-tr/pchip && python3 /mnt/pchip/scripts/bw-pchip-onsets-t1t2.py --plot-set default --plot-mode smooth --dpi 300 --bends 2)
+[onset-config] mnt: created default MGI=2, FBRM=2: /mnt/pchip/examples/synthetic-rgb-tr/pchip/onset-config.ini
+Input CSV:    bw-raw-vs-temp-pchip.csv
+Method:       raw_pchip
+Columns:      X='Tr (°C)', Y='BW'
+Wrote CSV:    bw-raw-vs-temp-pchip-bends.csv
+Wrote plot:   bw-raw-vs-temp-pchip-bends.png
+Bend points:
+  b1: 53.625 °C, BW=35.7397, rough=53.625 °C, peak=53.190 °C
+  b2: 48.781 °C, BW=52.9372, rough=48.781 °C, peak=48.102 °C
+
+Input CSV:    bw-sg-vs-temp-pchip.csv
+Method:       sg_pchip
+Columns:      X='Tr (°C)', Y='BW_smooth'
+Wrote CSV:    bw-sg-vs-temp-pchip-bends.csv
+Wrote plot:   bw-sg-vs-temp-pchip-bends.png
+Bend points:
+  b1: 53.608 °C, BW_smooth=35.8235, rough=53.730 °C, peak=53.190 °C
+  b2: 48.834 °C, BW_smooth=52.7008, rough=48.834 °C, peak=48.102 °C
+
+Wrote summary: bw-pchip-bend-summary.csv
+[exit code: 0]
+

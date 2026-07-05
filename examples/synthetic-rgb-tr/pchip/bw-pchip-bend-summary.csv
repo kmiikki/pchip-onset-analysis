@@ -1,0 +1,5 @@
+input_csv,method,report_mode,bend_index,temperature_C,value,rough_onset_temperature_C,peak_temperature_C,dY_dT_at_bend,dY_dT_at_peak,abs_dY_dT_at_bend,abs_dY_dT_at_peak,prominence,used_fallback,output_csv,output_png
+bw-raw-vs-temp-pchip.csv,raw_pchip,hybrid,1,53.6253,35.7397,53.6253,53.1897,-2.81273,-27.6338,2.81273,27.6338,27.6329,False,bw-raw-vs-temp-pchip-bends.csv,bw-raw-vs-temp-pchip-bends.png
+bw-raw-vs-temp-pchip.csv,raw_pchip,hybrid,2,48.7814,52.9372,48.7814,48.1019,-4.53859,-76.102,4.53859,76.102,76.102,False,bw-raw-vs-temp-pchip-bends.csv,bw-raw-vs-temp-pchip-bends.png
+bw-sg-vs-temp-pchip.csv,sg_pchip,hybrid,1,53.608,35.8235,53.7298,53.1897,-4.74663,-26.7597,4.74663,26.7597,26.7348,False,bw-sg-vs-temp-pchip-bends.csv,bw-sg-vs-temp-pchip-bends.png
+bw-sg-vs-temp-pchip.csv,sg_pchip,hybrid,2,48.8337,52.7008,48.8337,48.1019,-3.17776,-76.0431,3.17776,76.0431,76.0431,False,bw-sg-vs-temp-pchip-bends.csv,bw-sg-vs-temp-pchip-bends.png

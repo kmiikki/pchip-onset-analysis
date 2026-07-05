@@ -1,0 +1,32 @@
+{
+  "content_type": "mgi",
+  "derivative_y_axis_manual_limits_applied": false,
+  "directory_syntax": "x_<lower>-<upper>__mgi_<lower>-<upper>__fbrm_<lower>-<upper>; auto means that bound was not manually set",
+  "limits": {
+    "fbrm_y": {
+      "lower": null,
+      "upper": null
+    },
+    "mgi_y": {
+      "lower": null,
+      "upper": null
+    },
+    "x": {
+      "lower": null,
+      "upper": null
+    }
+  },
+  "output_mode": "base",
+  "primary_y_axis": "MGI",
+  "semantics": {
+    "analysis_changed": false,
+    "axis_limits_are_display_only": true,
+    "candidate_detection_changed": false,
+    "csv_result_values_changed": false,
+    "manual_y_limits_apply_to_derivative_panels": false,
+    "onset_detection_changed": false,
+    "smoothing_or_interpolation_changed": false
+  },
+  "view_id": null,
+  "view_type": "base"
+}

@@ -1,0 +1,2 @@
+label,analysis_dir,pchip_dir,raw_ok,sg_ok,onset_ok,skipped,error
+synthetic-rgb-tr,/mnt/pchip/examples/synthetic-rgb-tr,/mnt/pchip/examples/synthetic-rgb-tr/pchip,True,True,True,False,

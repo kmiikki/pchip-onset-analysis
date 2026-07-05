@@ -1,0 +1,14 @@
+BW PCHIP Workflow Report
+========================
+
+mode:              EXECUTE
+analysis dirs:     1
+raw+pchip ok:      1
+sg+pchip ok:       1
+errors/warnings:   0
+
+Per-directory results
+---------------------
+OK: synthetic-rgb-tr raw=True sg=True onset=True
+  analysis: /mnt/pchip/examples/synthetic-rgb-tr
+  pchip:    /mnt/pchip/examples/synthetic-rgb-tr/pchip

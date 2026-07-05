@@ -1,0 +1,56 @@
+flowchart TB
+  subgraph BR["Main computational branches"]
+    direction LR
+
+    subgraph A["Time-lapse image / MGI branch"]
+      direction TB
+      A1["Time-lapse image acquisition<br/>tlpicam.py<br/>full-frame images + tlpicam.log"]
+      A2["ROI definition and cropping<br/>ROI tools + roi.ini<br/>cropped ROI image sequence"]
+      A3["Mean RGB/BW extraction<br/>rgbmean.py → rgb.csv"]
+      A4["Image timebase + temperature alignment<br/>tlpicam.log → tlpicam.ts<br/>rgb.csv + temperature CSV → rgb-tr.csv"]
+      A5["PCHIP interpolation<br/>xy-pchip.py<br/>PCHIP CSV outputs"]
+      SG["Optional SG control<br/>tr-bw-sg.py → rgb-tr-sg.csv"]
+      A6["MGI/PCHIP onset detection<br/>bw-pchip-onsets-t1t2.py<br/>onsets + candidates + plots"]
+      A7["MGI/PCHIP outputs<br/>pchip/ CSV files + figures"]
+
+      A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+      A4 -. optional .-> SG
+      SG -. control input .-> A6
+    end
+
+    subgraph B["FBRM branch"]
+      direction TB
+      B1["FBRM and temperature export conversion<br/>fbrm2csv.py + tr2csv.py<br/>ts-fbrm.csv + ts-experiment.csv"]
+      B2["FBRM-temperature alignment<br/>align_fbrm_tr.py → ts-fbrm-tr.csv"]
+      B3["FBRM onset detection<br/>fbrm-onsets.py<br/>fbrm_onsets/ CSV/JSON/TXT + plots"]
+      B4["FBRM outputs<br/>fbrm_onsets/ results + figures"]
+
+      B1 --> B2 --> B3 --> B4
+    end
+  end
+
+    subgraph COMBO["3. Combined outputs and review galleries"]
+        direction TB
+        C1["MGI/PCHIP outputs\n+ FBRM outputs"]
+        C2["make-mgi-fbrm-combo.py"]
+        C3["combo/"]
+        C4["make-onset-gallery.py"]
+        C5["HTML review galleries\nMGI/PCHIP\nFBRM\ncombo"]
+
+        C1 --> C2 --> C3
+        C1 --> C4
+        C3 --> C4
+        C4 --> C5
+    end
+
+  A7 --> C1
+  B4 --> C1
+
+  subgraph Q["QC / documentation outputs"]
+    direction TB
+    QC["Not downstream computational inputs<br/>roi-image.jpg, roi-highlighted.jpg<br/>RGB-mean.png, BW-mean.png<br/>rgb-tr.png, bw-tr.png, rgb-tr-sg.png"]
+  end
+
+  A2 -. QC only .-> QC
+  A3 -. QC only .-> QC
+  A4 -. QC only .-> QC
