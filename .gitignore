@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Local/editor files
+*~
+*.swp
+.DS_Store
+
+# Generated onset workflow outputs
+galleries/
+workflow_logs/
+*_onsets/
+mgi_fbrm_combo/
+combo/
+pchip/
+views/
+_cleanup_archive/
+_archive*/
+*.log
+
+# Local temporary exports
+gallery-export*/
+pchip-gallery-share*/
+onset-gallery-share*/
+
+# Local archives/backups
+*.bak
+*.backup
+*.archive*
+scripts.archive-*/
+
+# Keep generated outputs for the compact synthetic example.
+# These files are part of the repository example, even though other generated
+# pchip/ result directories are ignored by default.
+!examples/synthetic-rgb-tr/pchip/
+!examples/synthetic-rgb-tr/pchip/**
