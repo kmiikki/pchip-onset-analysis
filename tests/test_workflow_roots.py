@@ -4,6 +4,7 @@ import importlib.util
 import io
 from pathlib import Path
 import sys
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -93,6 +94,37 @@ class WorkflowRootsTests(unittest.TestCase):
         for command in commands:
             self.assertTrue(command[1].startswith('/repo/project/scripts/'))
             self.assertNotIn('/data/pchip/scripts/', w.command_to_string(command))
+
+    def test_archive_cleanup_accepts_separate_data_tree_and_preserves_inputs(self):
+        (ROOT / 'generated').mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=ROOT / 'generated') as temp:
+            data = Path(temp)
+            analysis = data / EXPERIMENT / 'tl/roi/rgb/analysis'
+            output = analysis / 'pchip/result.csv'
+            output.parent.mkdir(parents=True)
+            output.write_text('synthetic cleanup fixture\n')
+            source = analysis / 'rgb-tr.csv'
+            source.write_text('synthetic input; never analyze\n')
+            options = args('--project-root', ROOT, '--data-root', data,
+                           '--experiments', EXPERIMENT, '--steps', 'mgi',
+                           '--clean-mode', 'archive', '--run', '--python', sys.executable)
+            experiments = w.discover_experiments(options)
+            cleaner = ROOT / 'scripts/clean-onset-outputs.py'
+            # The standalone safety guard must still reject a tree without scripts/.
+            guarded = subprocess.run([sys.executable, '-B', str(cleaner),
+                                      '--dry-run', '--project-root', str(data)],
+                                     capture_output=True, text=True)
+            self.assertEqual(guarded.returncode, 2)
+            results = []
+            self.assertTrue(w.run_clean_if_requested(
+                options, project_root=ROOT, experiments=experiments,
+                log_file=io.StringIO(), results=results))
+            self.assertEqual(results[0].returncode, 0)
+            self.assertFalse(output.exists())
+            archived = list((data / '_cleanup_archive').rglob('result.csv'))
+            self.assertEqual(len(archived), 1)
+            self.assertEqual(archived[0].read_text(), 'synthetic cleanup fixture\n')
+            self.assertEqual(source.read_text(), 'synthetic input; never analyze\n')
 
     def test_omitted_data_root_preserves_single_tree(self):
         options = args()

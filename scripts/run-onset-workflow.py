@@ -1011,6 +1011,12 @@ def run_clean_if_requested(
         str(args.data_root.resolve()),
     ]
 
+    # main() has validated the active code root and discovered the experiments.
+    # A separate data tree intentionally has no scripts/ directory; bypass only
+    # the cleaner's single-tree root check, retaining its target protections.
+    if args.data_root.resolve() != project_root.resolve() and experiments:
+        cmd.append("--allow-untrusted-root")
+
     if args.experiments:
         cmd.append("--experiments")
         cmd.extend(exp.name for exp in experiments)
