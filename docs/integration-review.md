@@ -37,3 +37,17 @@ case outcomes are included here. The optional general-purpose public rewrite of
 that study tooling remains out of scope, not silently replaced with synthetic
 claims. The repository's existing synthetic-image provenance is retained as
 documented upstream; generated private figures were not used as replacements.
+
+## Documentation follow-up identified during MGI reference review
+
+These maintenance observations accompany the [MGI implementation reference](mgi-onsets.md). They are follow-up items, not algorithm changes or corrections applied to the other method documents in this pass.
+
+- [pipeline.md](pipeline.md), workflow diagram: the SG arrow goes directly from SG preprocessing to onset detection; section 4.1 correctly includes a separate SG PCHIP stage. The diagram should agree with that sequence.
+- [current-method.md](current-method.md) correctly describes default positive-count first-valid and forced reporting, but omits the `--bends 0` bypass and the explicit-valley exemption from cap/floor. Its capped-reference description should distinguish candidate records from distinct anchors.
+- The detector CLI calls zero “all accepted peaks”, whereas implementation overwrites rejection flags. Its `--publication-plots` help mentions mono variants, but the implementation writes both color and mono. Its `peak` mode description omits the subsequent cap.
+- The valley helper comment says “sustained”; implementation uses one sample. Three-sample persistence belongs to baseline departure only.
+- [xy-pchip-algorithm.md](xy-pchip-algorithm.md) describes the upstream interpolation, not this detector's numerical gradient/qualification. It should not be read as saying that a nonmonotonic input signal becomes globally monotonic. No change to its algorithm is implied here.
+
+- [xy-pchip-algorithm.md](xy-pchip-algorithm.md), pseudocode step 6 uses left-closed bins, whereas `robust_bin_xy()` uses `np.digitize(..., right=True)` (right-closed interior bins). Its output naming should distinguish the default `<input-stem>-pchip` from an explicit `--outstem`, which receives only `.png`/`.csv`. These upstream documentation details were not changed in this task.
+
+- This document's historical “Review boundaries” paragraph says synthetic outputs remain unregenerated. That statement describes the initial integration, but is now stale after synthetic-output refresh commit `dbc78cc`. Clarify the historical scope in a later documentation pass; no detector-code discrepancy is implied.

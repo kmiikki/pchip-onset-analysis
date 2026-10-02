@@ -8,6 +8,12 @@ MGI means Mean Gray Intensity, represented by the historical `BW` signal column.
 
 Related context: [current method](current-method.md), [pipeline](pipeline.md), [PCHIP CLI](xy-pchip.md), and [PCHIP construction](xy-pchip-algorithm.md).
 
+## Conceptual summary
+
+The method starts from a saved MGI-versus-temperature PCHIP curve and identifies transition anchors as peaks in the absolute first derivative. For each anchor it backtracks toward higher temperature to locate rough onset geometry. Baseline departure and segmented-line intersection provide report candidates in the default hybrid mode; when the inter-peak conditions hold, separate valley geometry and reporting rules determine the applicable valley report.
+
+After report construction, candidate rejection and significance qualification distinguish eligible reports from diagnostic alternatives. With a positive requested onset count, the default first-valid selection accepts separated reports in cooling order and names them T1, T2, and so on. The detailed algorithm below specifies the precedence, fallbacks and diagnostic exceptions; requesting a count does not guarantee that many accepted onsets.
+
 ## Inputs
 
 Supply one or more positional PCHIP CSV paths. With none, `autodetect_inputs()` looks in the current directory for `bw-raw-vs-temp-pchip.csv` and `bw-sg-vs-temp-pchip.csv`, using whichever exist; neither existing is an error.
@@ -72,7 +78,15 @@ Anchors are ranked by descending `(prominence, peak height)`. If the requested c
 
 ## Candidate qualification
 
-Anchor qualification is the preceding height/prominence/edge/distance search. Report adjustment is described below and is not itself final acceptance.
+### Anchor detection and qualification
+
+Anchor qualification is the preceding height/prominence/edge/distance search. It determines which derivative peaks enter report construction, not which reports become T1/T2.
+
+### Report construction
+
+Rough backtracking, local fits, reporting-mode selection and the applicable valley/cap/floor rules construct reports before the filtering below. These steps are detailed in the following sections and in [Overall algorithm](#overall-algorithm). Report construction is not itself final acceptance.
+
+### Candidate rejection: report–anchor gap
 
 After ordinary and explicit valley candidates exist, a positive `--max-report-peak-gap-C` rejects candidates satisfying
 
@@ -82,6 +96,8 @@ $$
 
 The status is `rejected_report_peak_gap`; zero disables this check. The code tests finite gaps before rejecting.
 
+### Significance qualification
+
 Next, `compute_final_peak_reference()` sorts positive finite anchor heights from **candidate records not already rejected**. These are not deduplicated by anchor: an explicit valley and an ordinary candidate can contribute the same height. For the two largest values $H_1,H_2$:
 
 $$
@@ -89,6 +105,8 @@ R=\min(H_1,cH_2),\qquad c=5.0.
 $$
 
 With one eligible positive value, $R=H_1$; with none, $R=0$. A nonpositive dominance factor disables capping and uses $H_1$. A positive final fraction rejects $H<f_{\mathrm{final}}R$, default $f_{\mathrm{final}}=0.15$, with status `rejected_weak_final_peak`. Equality passes. Zero disables this filter. This reference is not necessarily the global maximum of the sampled derivative.
+
+### Final selection
 
 The later selection loop handles `rejected_duplicate_transition`, `not_selected_after_limit` and `accepted`. Candidate CSV `status` and `reason` distinguish these stages; a candidate's existence is not evidence of acceptance.
 
@@ -205,7 +223,11 @@ Equality is allowed. Duplicate checking occurs before the count-limit check. Oth
 
 Selected records are finally sorted in cooling order and assigned ranks 1, 2, etc. These are T1/T2 labels, not the strongest/second-strongest peaks. Requesting two allows zero or one accepted onset; no missing onset is fabricated. With zero accepted, bends CSV contains a header, plots contain no accepted markers, and stdout says none detected. With one accepted, only T1 is present.
 
-**Diagnostic exception:** `--bends 0` currently marks **every generated candidate** accepted in cooling order, overwriting earlier rejection status/reason and bypassing the final duplicate filter. It does not mean “all candidates surviving quality filters”, despite the CLI wording. This documentation records that behavior without changing it; do not equate it with positive-count production qualification.
+> **Implementation caveat — `--bends 0`**
+>
+> The current implementation marks **every generated candidate** accepted in cooling order, overwriting earlier rejection status/reason and bypassing the final duplicate filter. Do not interpret this as “all valid candidates” or “all candidates surviving quality filters”, despite the CLI wording.
+>
+> Positive-count production selection retains the qualification and duplicate checks described above. This caveat documents the current zero-count behavior; it does not change it.
 
 `--bends` omitted reads `[MGI] onsets` from `onset-config.ini` (initial default 2). An explicit nonnegative count is a one-run override; disagreement prints a warning, without updating the configured decision. Configuration resolution runs before CSV analysis and can create a missing config or back up/reset a malformed config according to [onset_config.py](../scripts/onset_config.py). This script is an analysis writer, not a read-only renderer.
 
@@ -229,6 +251,25 @@ Both CSVs append these `ValleyReportProvenance` fields:
 Absent temperatures are blank in CSV. Explicit valley candidates leave forced precedence/floor-applied false and post-cap temperature unset. Bends preserve selected candidate provenance, but their `report_mode` is the requested method, so use candidate CSV for the explicit `+valley-rise` distinction.
 
 `view-limits.json` records view bounds, display-only semantics, primary axis and the three reporting fractions under `onset_reporting`, with rule `separate_valley_report_with_forced_only_floor`. It is not a complete detector-parameter manifest. Preserve the saved curve, full CLI/config, code revision and numerical environment for reproducibility; the combined summary omits the new valley fields. CSV/summary paths can reflect caller-supplied local paths and need review before public sharing.
+
+## Reproducibility requirements
+
+**The saved detector input curve is part of the scientific provenance.** Final onset temperatures, plots or summary rows alone do not identify all samples, geometry and choices used to obtain them. Preserve the following information together:
+
+| Required record | What it establishes |
+|---|---|
+| Exact input PCHIP CSV(s) | The numerical samples analyzed, including grid spacing and signal values; retain each branch separately. |
+| RAW/SG identity and selected x/y columns | Whether the input represents RAW `BW` or SG `BW_smooth`, and which temperature column was actually selected. A filename-derived branch label alone is insufficient. |
+| Complete detector command and effective parameters | Reporting/selection modes and every scientific threshold, width and count, including defaults used in that run. |
+| Relevant `onset-config.ini` state and explicit count override | The requested onset count when configuration supplies it, and whether `--bends` overrode that state. Preserve the effective state, including any configuration creation/repair. |
+| Code revision / Git commit and any local modifications | The implementation and internal constants used; CLI values alone do not capture internal rules. |
+| Numerical environment | Python, NumPy and SciPy versions and relevant build/environment details sufficient to identify the numerical behavior used for gradients, peak finding and fitting. |
+| Bends and, where decision provenance is needed, candidate CSVs | Accepted reports plus rejected alternatives, ranks, indices, fit information and valley reporting provenance. Candidate export must be requested explicitly. |
+| Source preprocessing choices | RAW versus SG, and the SG settings used upstream when applicable. Repeating the upstream pipeline additionally requires its source input data. |
+| PCHIP construction settings | Selected columns, binning and dense-grid parameters and the upstream implementation that produced the saved detector input. These are needed to reconstruct that input from source. |
+| `view-limits.json` and figure settings | Presentation bounds and the saved reporting-fraction metadata, kept separate from the complete scientific parameter record. |
+
+**`view-limits.json` alone is not a full detector manifest and cannot reproduce the analysis.** It contains presentation/reporting metadata, not all scientific parameters, configuration state or input samples. Repeating detection from the exact saved curve is distinct from regenerating that curve through preprocessing and PCHIP construction. Preserve both levels of provenance when claiming end-to-end reproduction. The existing CSV precision and summary omissions described above still apply.
 
 ## Output files
 
@@ -371,14 +412,4 @@ For styling existing accepted results without analysis, use [render-publication-
 | [run-onset-workflow.py](../scripts/run-onset-workflow.py) | Broader code-root/data-root orchestration; preserves RAW BW and SG BW_smooth choices |
 | [render-publication-figures.py](../scripts/render-publication-figures.py) | Renders saved MGI curves and accepted bends; does not rerun this detector |
 
-## Documentation discrepancies for a later pass
-
-No other method documents were rewritten for this reference.
-
-- [pipeline.md](pipeline.md), workflow diagram: the SG arrow goes directly from SG preprocessing to onset detection; section 4.1 correctly includes a separate SG PCHIP stage. The diagram should agree with that sequence.
-- [current-method.md](current-method.md) correctly describes default positive-count first-valid and forced reporting, but omits the `--bends 0` bypass and the explicit-valley exemption from cap/floor. Its capped-reference description should distinguish candidate records from distinct anchors.
-- The detector CLI calls zero “all accepted peaks”, whereas implementation overwrites rejection flags. Its `--publication-plots` help mentions mono variants, but the implementation writes both color and mono. Its `peak` mode description omits the subsequent cap.
-- The valley helper comment says “sustained”; implementation uses one sample. Three-sample persistence belongs to baseline departure only.
-- [xy-pchip-algorithm.md](xy-pchip-algorithm.md) describes the upstream interpolation, not this detector's numerical gradient/qualification. It should not be read as saying that a nonmonotonic input signal becomes globally monotonic. No change to its algorithm is implied here.
-
-- [xy-pchip-algorithm.md](xy-pchip-algorithm.md), pseudocode step 6 uses left-closed bins, whereas `robust_bin_xy()` uses `np.digitize(..., right=True)` (right-closed interior bins). Its output naming should distinguish the default `<input-stem>-pchip` from an explicit `--outstem`, which receives only `.png`/`.csv`. These upstream documentation details were not changed in this task.
+Documentation maintenance observations are tracked in the [MGI reference review follow-up](integration-review.md#documentation-follow-up-identified-during-mgi-reference-review).
