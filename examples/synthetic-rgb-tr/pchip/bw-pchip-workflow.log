@@ -1,10 +1,10 @@
 BW PCHIP workflow log
 ====================
 
-analysis_dir: /mnt/pchip/examples/synthetic-rgb-tr
-pchip_dir:    /mnt/pchip/examples/synthetic-rgb-tr/pchip
+analysis_dir: examples/synthetic-rgb-tr
+pchip_dir:    examples/synthetic-rgb-tr/pchip
 
-$ (cd /mnt/pchip/examples/synthetic-rgb-tr && python3 /mnt/pchip/scripts/xy-pchip.py rgb-tr.csv --xcol 'Tr (°C)' --ycol BW --reverse-x --save-csv --outstem pchip/bw-raw-vs-temp-pchip --xlabel 'Temperature (°C) - cooling' --ylabel BW --title 'BW vs. Temperature - raw + PCHIP')
+$ (cd examples/synthetic-rgb-tr && python3 ../../scripts/xy-pchip.py rgb-tr.csv --xcol 'Tr (°C)' --ycol BW --reverse-x --save-csv --outstem pchip/bw-raw-vs-temp-pchip --xlabel 'Temperature (°C) - cooling' --ylabel BW --title 'BW vs. Temperature - raw + PCHIP')
 Input CSV:          rgb-tr.csv
 Selected columns:   X='Tr (°C)', Y='BW'
 Output stem:        pchip/bw-raw-vs-temp-pchip
@@ -12,7 +12,7 @@ Wrote plot:         pchip/bw-raw-vs-temp-pchip.png
 Wrote PCHIP CSV:     pchip/bw-raw-vs-temp-pchip.csv
 [exit code: 0]
 
-$ (cd /mnt/pchip/examples/synthetic-rgb-tr && python3 /mnt/pchip/scripts/xy-pchip.py rgb-tr-sg.csv --xcol 'Tr (°C)' --ycol BW_smooth --reverse-x --save-csv --outstem pchip/bw-sg-vs-temp-pchip --xlabel 'Temperature (°C) - cooling' --ylabel BW_smooth --title 'BW vs. Temperature - SG + PCHIP')
+$ (cd examples/synthetic-rgb-tr && python3 ../../scripts/xy-pchip.py rgb-tr-sg.csv --xcol 'Tr (°C)' --ycol BW_smooth --reverse-x --save-csv --outstem pchip/bw-sg-vs-temp-pchip --xlabel 'Temperature (°C) - cooling' --ylabel BW_smooth --title 'BW vs. Temperature - SG + PCHIP')
 Input CSV:          rgb-tr-sg.csv
 Selected columns:   X='Tr (°C)', Y='BW_smooth'
 Output stem:        pchip/bw-sg-vs-temp-pchip
@@ -20,8 +20,8 @@ Wrote plot:         pchip/bw-sg-vs-temp-pchip.png
 Wrote PCHIP CSV:     pchip/bw-sg-vs-temp-pchip.csv
 [exit code: 0]
 
-$ (cd /mnt/pchip/examples/synthetic-rgb-tr/pchip && python3 /mnt/pchip/scripts/bw-pchip-onsets-t1t2.py --plot-set default --plot-mode smooth --dpi 300 --bends 2)
-[onset-config] mnt: created default MGI=2, FBRM=2: /mnt/pchip/examples/synthetic-rgb-tr/pchip/onset-config.ini
+$ (cd examples/synthetic-rgb-tr/pchip && python3 ../../../scripts/bw-pchip-onsets-t1t2.py --plot-set default --plot-mode smooth --dpi 300 --bends 2)
+[onset-config] synthetic-rgb-tr: existing MGI=2, FBRM=2: examples/synthetic-rgb-tr/pchip/onset-config.ini
 Input CSV:    bw-raw-vs-temp-pchip.csv
 Method:       raw_pchip
 Columns:      X='Tr (°C)', Y='BW'

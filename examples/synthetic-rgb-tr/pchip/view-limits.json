@@ -16,6 +16,12 @@
       "upper": null
     }
   },
+  "onset_reporting": {
+    "forced_valley_report_floor": 0.05,
+    "interpeak_report_rise_frac": 0.1,
+    "interpeak_rise_frac": 0.03,
+    "rule": "separate_valley_report_with_forced_only_floor"
+  },
   "output_mode": "base",
   "primary_y_axis": "MGI",
   "semantics": {
