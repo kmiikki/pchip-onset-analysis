@@ -50,8 +50,8 @@ sharing package.
 Example:
 
 ```bash
-gallery_root=/mnt/pchip/examples
-share_root=/mnt/pchip/onset-gallery-share
+gallery_root=/path/to/data/examples
+share_root=/path/to/data/onset-gallery-share
 
 rm -rf "$share_root"
 
@@ -92,8 +92,8 @@ files referenced by the gallery.
 Example:
 
 ```bash
-gallery_root=/mnt/pchip/examples
-share_root=/mnt/pchip/onset-gallery-share-with-data
+gallery_root=/path/to/data/examples
+share_root=/path/to/data/onset-gallery-share-with-data
 
 rm -rf "$share_root"
 
@@ -167,10 +167,10 @@ examples/synthetic-rgb-tr/pchip/
 ```
 
 To generate a gallery from it, copy the `pchip/` output into a temporary
-experiment-tree layout, for example under `/mnt/pchip`:
+experiment-tree layout, for example under `/path/to/data`:
 
 ```bash
-work=/mnt/pchip/examples
+work=/path/to/data/examples
 rm -rf "$work/synthetic-rgb-tr"
 
 mkdir -p "$work/synthetic-rgb-tr/tl/roi1/rgb/analysis"

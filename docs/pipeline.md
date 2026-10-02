@@ -307,3 +307,11 @@ rgb-tr-sg.png
 ```
 
 These files help verify that the ROI, image sequence, BW signal, and temperature alignment are reasonable. They should be treated as QC/documentation outputs, not as required computational dependencies.
+
+## Implementation update
+
+The current qualification rules are documented in [current-method.md](current-method.md).
+MGI RAW uses `BW`; the optional SG control branch uses `BW_smooth` before PCHIP.
+FBRM retains its measurement-order SG/sequential method, not PCHIP.
+Publication replay and supplementary rendering are downstream saved-result
+consumers and do not feed back into scientific selection.

@@ -41,3 +41,10 @@ The synthetic example, including CSV files and PCHIP output plots, is available 
 ```text
 examples/synthetic-rgb-tr/
 ```
+
+## Current method and rendering additions
+
+- [Current method](current-method.md): qualified valley reporting and bounded FBRM precursor rejection.
+- [Saved-result publication rendering](publication-rendering.md): modes, supplementary variants and offline comparison.
+- [Publication policy](publication-policy.md): synthetic-only examples and release review.
+- [Integration review](integration-review.md): accepted and excluded source changes.

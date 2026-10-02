@@ -65,6 +65,7 @@ pandas
 matplotlib
 scipy
 openpyxl
+opencv-python-headless
 ```
 
 ---
@@ -220,6 +221,28 @@ For the full script list and directory-discovery details, see
 [`docs/scripts.md`](docs/scripts.md).
 
 ---
+
+## Saved-result publication and supplementary rendering
+
+See [current method and parameter rules](docs/current-method.md) and
+[publication/supplementary commands](docs/publication-rendering.md).
+The MGI and FBRM production detectors are distinct methods; FBRM does not
+use the experimental PCHIP adapter. Rendering never selects new onsets.
+
+Run the synthetic regression suite with:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+For separate code and data trees, `--project-root` identifies this repository
+(with `scripts/`) and `--data-root` identifies the experiment tree. When omitted,
+the data root equals the project root. The legacy `{bin}` template variable
+now resolves to the active repository `scripts/` directory.
+
+Only synthetic examples belong in this public repository. Keep private inputs,
+scientific outputs, publication PNGs, manifests and review exports outside Git.
+See [publication policy](docs/publication-policy.md).
 
 ## 🧭 Workflow documentation
 

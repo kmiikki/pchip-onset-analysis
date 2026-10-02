@@ -93,3 +93,12 @@ For gallery usage examples, image-only export packages, and screenshot documenta
 
 `scripts/legacy/` contains older gallery scripts retained for traceability with earlier workflow diagrams and archived analysis workflows. New gallery generation uses `scripts/make-onset-gallery.py`.
 
+
+## Saved-result publication tools
+
+- `render-publication-figures.py`: explicit saved MGI curves/onsets, verified saved-parameter FBRM replay, and saved combo exports.
+- `saved_fbrm_replay.py`: validates saved boundary, smoothing and witness metadata; does not import or execute the detector.
+- `render-supplementary-series.py`: deterministic discovery or explicit saved plans; shown/hidden onset presentation variants.
+- `render-supplementary-gallery.py`: offline thumbnails and structured-manifest comparison with client-side filters.
+
+See [commands and data contracts](publication-rendering.md).

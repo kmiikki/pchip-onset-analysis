@@ -142,3 +142,15 @@ Compared with earlier standalone FBRM onset versions, this repository version al
 - shared view-limit arguments and `view-limits.json` output for display-only axis-limit handling.
 
 These options do not change the basic FBRM onset model: the detector preserves measurement order, uses measured/interpolated `Tr (°C)`, does not use `Tr_regular`, and reports zero to the requested maximum number of valid onsets.
+
+## Current bounded precursor qualification
+
+Before taking the first valid event, a weak event can be disqualified by a
+later event within `--min-separation-C`. Both the level shift and sustained
+shift must strictly exceed `--nearby-stronger-factor` times the larger of the
+early metric and its corresponding threshold. The default factor is 4;
+0 disables this qualification for historical comparison. A distant stronger
+event cannot suppress an earlier event, and one strong metric is insufficient.
+The first surviving event retains the existing sequential selection rule.
+Candidate exports identify the rejecting candidate and cooling-progress gap.
+This changes selection qualification, not cooling preparation or SG smoothing.
