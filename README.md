@@ -43,7 +43,7 @@ MGI/PCHIP diagnostic figures:
   <img src="docs/figures/sg-pchip-diagnostic.png" alt="MGI SG PCHIP diagnostic" width="48%">
 </p>
 
-Static offline gallery:
+Static offline gallery of the current synthetic example (10 MGI/PCHIP images):
 
 ![Onset analysis gallery](docs/figures/gallery-screenshot.png)
 

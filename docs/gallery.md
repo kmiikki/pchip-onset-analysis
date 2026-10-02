@@ -166,23 +166,32 @@ examples/synthetic-rgb-tr/rgb-tr-sg.csv
 examples/synthetic-rgb-tr/pchip/
 ```
 
-To generate a gallery from it, copy the `pchip/` output into a temporary
-experiment-tree layout, for example under `/path/to/data`:
+To reproduce the documentation gallery using only committed synthetic results,
+run from the repository root (use a fresh `work` directory):
 
 ```bash
-work=/path/to/data/examples
-rm -rf "$work/synthetic-rgb-tr"
-
+work=generated/synthetic-gallery
 mkdir -p "$work/synthetic-rgb-tr/tl/roi1/rgb/analysis"
 cp -a examples/synthetic-rgb-tr/pchip \
   "$work/synthetic-rgb-tr/tl/roi1/rgb/analysis/pchip"
-
 python3 scripts/make-onset-gallery.py "$work" \
   --gallery-content all \
   --gallery-view base \
   --with-data \
-  --output "$work/onset-gallery.html"
+  --root-label examples/synthetic-rgb-tr \
+  --open-all \
+  --output onset-gallery.html
 ```
+
+Open `generated/synthetic-gallery/onset-gallery.html` offline. All image and
+support links are relative, so the directory can be moved or shared intact.
+`--root-label` changes only the displayed root name, not discovery or links.
+
+The example gallery contains **10 MGI/PCHIP images**: RAW and SG versions of
+onsets, diagnostics, diagnostic main, raw/smooth, and PCHIP data plots.
+`rgb-tr-sg.png` is deliberately excluded: it is a preprocessing quick-look,
+whose legacy bend markers are not the final PCHIP onset results.
+The documentation screenshot captures the gallery content without browser chrome.
 
 ## Related files
 

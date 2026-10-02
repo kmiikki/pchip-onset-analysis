@@ -36,3 +36,14 @@ class PublicationGalleryTests(unittest.TestCase):
                 'none; saved samples and accepted results only','options':{'width_mm':'NaN'}})):
                 image.with_suffix('.manifest.json').write_text(content)
                 self.assertIsNone(g.publication_width_mm(image))
+
+    def test_public_root_label_changes_only_visible_heading(self):
+        from argparse import Namespace
+        root = Path('/neutral/synthetic')
+        args = Namespace(gallery_content='all', gallery_view='base', with_data=True,
+                         thumbnail_height=240, view_id=None, open_all=True, no_tree=True, title='Synthetic gallery', root_label='examples/synthetic-rgb-tr')
+        page = g.render_html(args=args, root_abs=root, output_path=root/'index.html', items=[])
+        self.assertIn('<code>examples/synthetic-rgb-tr</code>', page)
+        self.assertNotIn('/neutral/synthetic', page)
+        args.root_label = '<synthetic>'
+        self.assertIn('&lt;synthetic&gt;', g.render_html(args=args, root_abs=root, output_path=root/'index.html', items=[]))

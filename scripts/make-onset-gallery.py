@@ -254,6 +254,7 @@ def parse_args() -> argparse.Namespace:
         default=Path("."),
         help="Source PCHIP project root directory.",
     )
+    parser.add_argument("--root-label", help="Display name for the source root; does not change file paths.")
     parser.add_argument(
         "--output",
         type=Path,
@@ -1209,7 +1210,7 @@ def render_html(
 
     css = render_css(args.thumbnail_height)
     title = html.escape(args.title)
-    root_display = html.escape(root_abs.as_posix())
+    root_display = html.escape(getattr(args, "root_label", None) or root_abs.as_posix())
 
     lines: list[str] = [
         "<!doctype html>",
