@@ -11,6 +11,8 @@ The pipeline documentation describes the final computational workflow and uses r
 
 ## Script and tool documentation
 
+- [MGI/PCHIP onset analysis](mgi-onsets.md): full detector algorithm, qualification, reporting, parameters and provenance.
+
 - `scripts.md` summarizes the repository scripts and their roles.
 - `fbrm-onsets.md` describes FBRM Total Counts onset detection, inputs, parameters, and output files.
 - `xy-pchip.md` documents the `xy-pchip.py` command-line tool.

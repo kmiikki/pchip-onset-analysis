@@ -12,6 +12,8 @@ galleries that can be checked before scientific interpretation.
 
 ## 🔗 Quick links
 
+- **MGI/PCHIP onset method:** [docs/mgi-onsets.md](docs/mgi-onsets.md)
+
 - **Workflow overview:** [`docs/pipeline.md`](docs/pipeline.md)
 - **Script overview:** [`docs/scripts.md`](docs/scripts.md)
 - **Gallery generation:** [`docs/gallery.md`](docs/gallery.md)

@@ -4,6 +4,8 @@ This repository contains Python scripts for the PCHIP / MGI / FBRM onset-analysi
 
 ## Primary analysis and figure generators
 
+See [MGI/PCHIP onset analysis](mgi-onsets.md) for the full detector method and parameter reference.
+
 - `xy-pchip.py` creates PCHIP-interpolated curve data from MGI/RGB temperature data.
 - `bw-pchip-onsets-t1t2.py` detects MGI/PCHIP onset temperatures and writes MGI result figures.
 - `fbrm-onsets.py` detects FBRM Total Counts onset temperatures and writes FBRM result figures. See `fbrm-onsets.md`.
