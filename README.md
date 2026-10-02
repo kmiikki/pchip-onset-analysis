@@ -16,6 +16,8 @@ galleries that can be checked before scientific interpretation.
 
 - **Workflow overview:** [`docs/pipeline.md`](docs/pipeline.md)
 - **Script overview:** [`docs/scripts.md`](docs/scripts.md)
+- **Saved-result publication/supplementary rendering:** [documentation](docs/publication-rendering.md)
+- **Public/private release policy:** [documentation](docs/publication-policy.md)
 - **Gallery generation:** [`docs/gallery.md`](docs/gallery.md)
 - **FBRM onset detector:** [`docs/fbrm-onsets.md`](docs/fbrm-onsets.md)
 - **PCHIP algorithm notes:** [`docs/xy-pchip-algorithm.md`](docs/xy-pchip-algorithm.md)

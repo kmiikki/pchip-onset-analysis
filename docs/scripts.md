@@ -8,13 +8,13 @@ See [MGI/PCHIP onset analysis](mgi-onsets.md) for the full detector method and p
 
 - `xy-pchip.py` creates PCHIP-interpolated curve data from MGI/RGB temperature data.
 - `bw-pchip-onsets-t1t2.py` detects MGI/PCHIP onset temperatures and writes MGI result figures.
-- `fbrm-onsets.py` detects FBRM Total Counts onset temperatures and writes FBRM result figures. See `fbrm-onsets.md`.
-- `make-mgi-fbrm-combo.py` creates combined MGI/FBRM comparison figures from already generated MGI/PCHIP and FBRM outputs.
+- `fbrm-onsets.py` detects FBRM Total Counts onset temperatures and writes FBRM result figures. See [FBRM method](fbrm-onsets.md).
+- `make-mgi-fbrm-combo.py` creates combined figures/data exports using saved MGI/PCHIP and onset results plus aligned source measurements. It performs its own existing FBRM curve preparation/smoothing; it is not the saved-results-only publication renderer.
 
 ## Workflow runners
 
-- `run-onset-workflow.py` orchestrates the full PCHIP / MGI / FBRM workflow.
-- `run-bw-pchip-workflow.py` runs the MGI/BW PCHIP workflow for a single analysis directory or a discovered batch of analysis directories.
+- `run-onset-workflow.py` orchestrates PCHIP, MGI, FBRM, combo and gallery stages. `--project-root` selects repository code under `scripts/`; `--data-root` selects inputs/outputs (defaults to the project root).
+- `run-bw-pchip-workflow.py` runs the MGI/BW PCHIP workflow for a single analysis directory or a discovered batch of analysis directories. Use explicit `--xy-pchip` and `--onset-script` paths to this clone; bare defaults may resolve external PATH tools.
 
 ## Gallery generation
 
@@ -71,7 +71,7 @@ but it is not sufficient for `make-onset-gallery.py` discovery. For gallery gene
 
 This requirement avoids special-case gallery logic and prevents the gallery builder from accidentally collecting legacy, root-level, or unrelated result directories.
 
-For gallery usage examples, image-only export packages, and screenshot documentation, see `gallery.md`.
+For gallery usage examples, image-only export packages, and screenshot documentation, see [gallery documentation](gallery.md).
 
 ## Shared helpers
 
@@ -104,3 +104,8 @@ For gallery usage examples, image-only export packages, and screenshot documenta
 - `render-supplementary-gallery.py`: offline thumbnails and structured-manifest comparison with client-side filters.
 
 See [commands and data contracts](publication-rendering.md).
+
+All 19 top-level Python files in `scripts/` are classified above. Image acquisition
+and ROI extraction utilities mentioned in the broader pipeline are upstream tools,
+not additional top-level scripts shipped here. Legacy gallery implementations are
+kept only under `scripts/legacy/`.

@@ -28,8 +28,10 @@ mirror of a private analysis workspace.
 
 The new default MGI/FBRM qualification rules are scientific behavior changes
 relative to the public baseline, transferred from the validated implementation
-without retuning. Existing synthetic example outputs remain historical examples;
-they are not regenerated or presented as results of the new rules.
+without retuning. The synthetic example was subsequently regenerated with the current method in
+commit `dbc78cc`; accepted RAW/SG T1/T2 values were unchanged, and scientific
+outputs and all example PNGs were refreshed. The gallery screenshot was refreshed
+separately in `1aa3c50`. These immutable references document completed updates.
 
 Private study scripts and expected-result tables require separate privacy review
 before any future publication. No experimental correctness claims or private
@@ -40,14 +42,16 @@ documented upstream; generated private figures were not used as replacements.
 
 ## Documentation follow-up identified during MGI reference review
 
-These maintenance observations accompany the [MGI implementation reference](mgi-onsets.md). They are follow-up items, not algorithm changes or corrections applied to the other method documents in this pass.
+The documentation consistency pass resolved the SG diagram bypass, candidate-record
+reference wording, explicit-valley cap/floor exception, zero-count caveat,
+PCHIP bin closure/output naming, and stale synthetic-output status. The
+[MGI reference](mgi-onsets.md) remains the authoritative detailed description.
 
-- [pipeline.md](pipeline.md), workflow diagram: the SG arrow goes directly from SG preprocessing to onset detection; section 4.1 correctly includes a separate SG PCHIP stage. The diagram should agree with that sequence.
-- [current-method.md](current-method.md) correctly describes default positive-count first-valid and forced reporting, but omits the `--bends 0` bypass and the explicit-valley exemption from cap/floor. Its capped-reference description should distinguish candidate records from distinct anchors.
-- The detector CLI calls zero “all accepted peaks”, whereas implementation overwrites rejection flags. Its `--publication-plots` help mentions mono variants, but the implementation writes both color and mono. Its `peak` mode description omits the subsequent cap.
-- The valley helper comment says “sustained”; implementation uses one sample. Three-sample persistence belongs to baseline departure only.
-- [xy-pchip-algorithm.md](xy-pchip-algorithm.md) describes the upstream interpolation, not this detector's numerical gradient/qualification. It should not be read as saying that a nonmonotonic input signal becomes globally monotonic. No change to its algorithm is implied here.
+Remaining source-help/comment follow-up (no script changes in this pass):
 
-- [xy-pchip-algorithm.md](xy-pchip-algorithm.md), pseudocode step 6 uses left-closed bins, whereas `robust_bin_xy()` uses `np.digitize(..., right=True)` (right-closed interior bins). Its output naming should distinguish the default `<input-stem>-pchip` from an explicit `--outstem`, which receives only `.png`/`.csv`. These upstream documentation details were not changed in this task.
+- The MGI detector help calls zero “all accepted peaks”; implementation overwrites rejection flags. The reference documents this exception.
+- `--publication-plots` help mentions mono variants but code writes color and mono.
+- `peak` reporting-mode help omits the subsequent derivative cap.
+- The valley helper comment says “sustained”; its scan tests one sample. Three-sample confirmation belongs to baseline departure.
 
-- This document's historical “Review boundaries” paragraph says synthetic outputs remain unregenerated. That statement describes the initial integration, but is now stale after synthetic-output refresh commit `dbc78cc`. Clarify the historical scope in a later documentation pass; no detector-code discrepancy is implied.
+These are wording follow-ups, not requests to change scientific behavior.

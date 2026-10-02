@@ -1,6 +1,8 @@
 # Current method and parameter contract
 
-This supplements the existing [pipeline](pipeline.md), [PCHIP algorithm](xy-pchip-algorithm.md)
+This is a concise record of current method changes, not the full detector reference.
+For complete MGI rules, CLI defaults and reproducibility requirements, see
+[MGI/PCHIP onset analysis](mgi-onsets.md). It supplements the existing [pipeline](pipeline.md), [PCHIP algorithm](xy-pchip-algorithm.md)
 and [FBRM method](fbrm-onsets.md). No experimental onset values are reported here.
 The CLI help and saved parameter records are the executable parameter reference.
 
@@ -27,7 +29,7 @@ derivative. Height, prominence, edge and separation qualifications determine
 candidate anchors. Rough backtracking, baseline departure and segmented local
 line intersections provide report candidates. The hybrid reporting mode
 reconciles departure/intersection evidence according to its existing settings.
-Production selection remains first-valid in cooling order after qualification;
+For positive requested counts, production selection remains first-valid in cooling order after qualification;
 requesting two onsets does not guarantee two accepted candidates.
 
 The current valley rule separates geometry from final report qualification:
@@ -53,6 +55,14 @@ fraction, report fraction, forced precedence, geometry temperature, qualified
 report temperature, post-cap temperature and whether the floor applied.
 `view-limits.json` also records the reporting rule and configured fractions.
 Consumers must allow these additional columns.
+
+Implementation caveats: `--bends 0` currently accepts all generated candidate
+records and overwrites earlier rejection status; it is not “all valid candidates”.
+Explicit valley-rise candidates are appended after the peak-anchored cap/floor
+loop and do not undergo it. The final significance reference uses eligible
+candidate records, not deduplicated distinct anchors. The valley-rise scan takes
+one threshold-crossing sample; baseline departure uses three-sample confirmation.
+See the [full qualification and reporting rules](mgi-onsets.md#candidate-qualification).
 
 Fractional derivative qualifications are scale-independent; fitting widths,
 separations and gaps are temperature-scale parameters. Absolute baseline

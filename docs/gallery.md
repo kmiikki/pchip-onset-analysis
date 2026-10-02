@@ -53,12 +53,13 @@ Example:
 gallery_root=/path/to/data/examples
 share_root=/path/to/data/onset-gallery-share
 
-rm -rf "$share_root"
+# Choose a fresh export directory; do not overwrite an existing package.
 
 python3 scripts/make-onset-gallery.py "$gallery_root" \
   --gallery-content all \
   --gallery-view base \
   --export-image-tree "$share_root" \
+  --root-label synthetic-examples \
   --output onset-gallery.html
 ```
 
@@ -68,7 +69,13 @@ Open the exported gallery:
 firefox "file://$share_root/onset-gallery.html"
 ```
 
-Create a compressed package:
+Create a portable ZIP package (HTML and original PNGs remain together):
+
+```bash
+(cd "$(dirname "$share_root")" && zip -r "$(basename "$share_root").zip" "$(basename "$share_root")")
+```
+
+Alternatively, on Unix systems:
 
 ```bash
 tar -C "$(dirname "$share_root")" \
@@ -95,12 +102,13 @@ Example:
 gallery_root=/path/to/data/examples
 share_root=/path/to/data/onset-gallery-share-with-data
 
-rm -rf "$share_root"
+# Choose a fresh export directory; do not overwrite an existing package.
 
 python3 scripts/make-onset-gallery.py "$gallery_root" \
   --gallery-content all \
   --gallery-view base \
   --export-image-tree "$share_root" \
+  --root-label synthetic-examples \
   --export-data \
   --output onset-gallery.html
 ```

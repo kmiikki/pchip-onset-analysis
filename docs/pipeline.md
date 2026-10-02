@@ -18,13 +18,14 @@ flowchart TB
       A3["Mean RGB/BW extraction<br/>rgbmean.py → rgb.csv"]
       A4["Image timebase + temperature alignment<br/>tlpicam.log → tlpicam.ts<br/>rgb.csv + temperature CSV → rgb-tr.csv"]
       A5["PCHIP interpolation<br/>xy-pchip.py<br/>PCHIP CSV outputs"]
+      SGP["SG PCHIP<br/>xy-pchip.py<br/>bw-sg-vs-temp-pchip.csv"]
       SG["Optional SG control<br/>tr-bw-sg.py → rgb-tr-sg.csv"]
       A6["MGI/PCHIP onset detection<br/>bw-pchip-onsets-t1t2.py<br/>onsets + candidates + plots"]
       A7["MGI/PCHIP outputs<br/>pchip/ CSV files + figures"]
 
       A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
       A4 -. optional .-> SG
-      SG -. control input .-> A6
+      SG --> SGP --> A6
     end
 
     subgraph B["FBRM branch"]
@@ -40,15 +41,11 @@ flowchart TB
 
     subgraph COMBO["3. Combined outputs and review galleries"]
         direction TB
-        C1["MGI/PCHIP outputs
-+ FBRM outputs"]
+        C1["MGI/PCHIP outputs<br/>+ FBRM outputs"]
         C2["make-mgi-fbrm-combo.py"]
         C3["combo/"]
         C4["make-onset-gallery.py"]
-        C5["HTML review galleries
-MGI/PCHIP
-FBRM
-combo"]
+        C5["HTML review galleries<br/>MGI/PCHIP, FBRM, combo"]
 
         C1 --> C2 --> C3
         C1 --> C4
@@ -58,6 +55,8 @@ combo"]
 
   A7 --> C1
   B4 --> C1
+  A4 -. aligned MGI measurements .-> C2
+  B2 -. aligned FBRM measurements .-> C2
 
   subgraph Q["QC / documentation outputs"]
     direction TB
@@ -67,6 +66,17 @@ combo"]
   A2 -. QC only .-> QC
   A3 -. QC only .-> QC
   A4 -. QC only .-> QC
+
+  subgraph R["Downstream saved-result rendering / review only; no onset feedback"]
+    RP["render-publication-figures.py<br/>saved MGI / verified FBRM replay / saved combo"]
+    RS["render-supplementary-series.py<br/>saved-result batch via publication renderer"]
+    PNG["Publication / supplementary PNGs + manifests"]
+    RG["render-supplementary-gallery.py<br/>offline review from manifests"]
+    RS --> RP --> PNG --> RG
+  end
+  A7 --> RS
+  B4 --> RS
+  C3 --> RS
 ```
 
 ## 2. Scope
@@ -310,8 +320,15 @@ These files help verify that the ROI, image sequence, BW signal, and temperature
 
 ## Implementation update
 
-The current qualification rules are documented in [current-method.md](current-method.md).
+The full MGI detector reference is [mgi-onsets.md](mgi-onsets.md);
+[current-method.md](current-method.md) summarizes current method changes.
 MGI RAW uses `BW`; the optional SG control branch uses `BW_smooth` before PCHIP.
 FBRM retains its measurement-order SG/sequential method, not PCHIP.
 Publication replay and supplementary rendering are downstream saved-result
 consumers and do not feed back into scientific selection.
+
+Saved-result rendering consumes completed analysis outputs and has no feedback
+edge into either detector. The supplementary wrapper invokes the publication
+renderer; its gallery reads manifests and PNGs. FBRM publication replay reconstructs
+only the saved analysis prefix with validated saved settings, without candidate
+selection. See [rendering contracts](publication-rendering.md).

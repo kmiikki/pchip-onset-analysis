@@ -30,7 +30,11 @@ FBRM requires `--data`, `--onsets-file`, `--candidates-file`, `--params-file`:
 the original aligned CSV and saved production outputs. `--points show` displays
 original samples. `--onsets text` includes the existing FBRM markers and values;
 `none` hides both. Full means the complete saved **analysis prefix**, not the
-excluded post-cutoff cooling context. See [replay validation](current-method.md).
+excluded post-cutoff cooling context. The shared `saved_fbrm_replay.py` extracts only the two production smoothing
+helpers, never importing the detector module or running candidate selection.
+Saved boundary, SG-window and raw/smooth candidate/onset witnesses must validate;
+a mismatch fails rather than rendering an unverified curve. See
+[replay validation](current-method.md#combo-and-saved-result-replay).
 
 Combo uses `--data` pointing to the existing combo export. It plots no raw
 points and no vertical onset markers. Optional saved onset files supply only
@@ -86,7 +90,9 @@ views come only from saved view metadata or matching renderer manifests; no
 new limits are inferred. Archived views may be retained as alternatives.
 COMBO is BW; standalone MGI/FBRM are gray with points when available. RAW points
 remain RAW even beside an SG-derived MGI curve. No separate onset labels are
-added. COMBO already has no onset layer in either presentation variant.
+added. The generated supplementary COMBO commands use `--onsets none` in both variants,
+so these pairs already have no onset layer. This does not remove the standalone
+combo renderer's optional saved-value text capability.
 
 The batch writes `plan.json`, PNG/manifest pairs and a render log. It does not
 write a consolidated production manifest automatically. For gallery building,
@@ -107,3 +113,9 @@ No external libraries or server are needed in the browser. Experiment, ROI,
 type, branch, view and onset-visibility filters are local JavaScript. Keep both
 production directories together when copying/zipping a comparison. Full images
 stay independent; thumbnails are not publication replacements.
+
+Only synthetic/public inputs belong in public examples. Plans, renderer manifests,
+render logs and galleries from private data can expose paths and accepted values,
+even when the PNG hides onset annotations. Keep these artifacts private under the
+[publication policy](publication-policy.md). Presentation variants do not anonymize
+research data.
