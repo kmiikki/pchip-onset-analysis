@@ -106,7 +106,7 @@ from __future__ import annotations
 import argparse
 import csv
 import sys
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Sequence
 
@@ -167,6 +167,19 @@ class FitLine:
 
 
 @dataclass(frozen=True)
+class ValleyReportProvenance:
+    """Keep report qualification separate from the geometry used by the fits."""
+    interpeak_rise_frac: float = 0.03
+    interpeak_report_rise_frac: float = 0.10
+    forced_valley_report_floor: float = 0.05
+    forced_valley_precedence: bool = False
+    valley_geometry_temperature_C: float | None = None
+    valley_qualified_report_temperature_C: float | None = None
+    post_derivative_cap_temperature_C: float | None = None
+    forced_valley_floor_applied: bool = False
+
+
+@dataclass(frozen=True)
 class BendPoint:
     """Final accepted bend/onset point written to the result CSV.
 
@@ -203,6 +216,7 @@ class BendPoint:
     pre_line: FitLine | None
     transition_line: FitLine | None
     used_fallback: bool
+    valley_report: ValleyReportProvenance | None = None
 
 
 @dataclass
@@ -251,6 +265,7 @@ class CandidatePoint:
     final_rank: int | None = None
     status: str = "candidate"
     reason: str = ""
+    valley_report: ValleyReportProvenance | None = None
 
 
 @dataclass(frozen=True)
@@ -399,10 +414,17 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=0.03,
         help=(
-            "For inter-peak valley onset adjustment, report the first point after "
-            "the valley where |dY/dT| has risen by this fraction of the valley-to-"
-            "peak rise. Small values keep the report point close to the valley."
+            "Valley rise fraction for rough geometry, fitting windows and forced "
+            "eligibility; final reports use --interpeak-report-rise-frac."
         ),
+    )
+    parser.add_argument(
+        "--interpeak-report-rise-frac", type=float, default=0.10,
+        help="Final forced/explicit valley report fraction (0..1); does not change rough geometry.",
+    )
+    parser.add_argument(
+        "--forced-valley-report-floor", type=float, default=0.05,
+        help="Anchor-relative derivative floor for forced-valley reports only (0..1; 0 disables).",
     )
     parser.add_argument(
         "--interpeak-min-neighbor-peak-frac",
@@ -1339,6 +1361,20 @@ def compute_final_peak_reference(
     )
 
 
+def qualify_forced_valley_report(
+    abs_d: np.ndarray, report_idx: int, peak_idx: int, *, forced: bool, floor: float,
+) -> int:
+    """After the report cap, qualify a forced valley on its existing anchor."""
+    if not forced or floor <= 0:
+        return int(report_idx)
+    peak_abs = float(abs_d[peak_idx])
+    if np.isfinite(peak_abs) and peak_abs > 0 and float(abs_d[report_idx]) < floor * peak_abs:
+        for idx in range(int(report_idx), int(peak_idx) - 1, -1):
+            if np.isfinite(abs_d[idx]) and float(abs_d[idx]) >= floor * peak_abs:
+                return int(idx)
+    return int(report_idx)
+
+
 def detect_bends(
     *,
     csv_path: Path,
@@ -1370,6 +1406,8 @@ def detect_bends(
     interpeak_rise_frac: float,
     interpeak_min_neighbor_peak_frac: float,
     max_report_peak_gap_C: float,
+    interpeak_report_rise_frac: float = 0.10,
+    forced_valley_report_floor: float = 0.05,
 ) -> tuple[list[BendPoint], list[CandidatePoint]]:
     """Detect final bend/onset points and keep all diagnostic candidates.
 
@@ -1391,6 +1429,11 @@ def detect_bends(
     filter, not as the primary ranking criterion for production T1/T2 reporting.
     """
     abs_d = np.abs(dy_dx)
+    for name, value in (("interpeak_report_rise_frac", interpeak_report_rise_frac),
+                        ("forced_valley_report_floor", forced_valley_report_floor)):
+        if not np.isfinite(value) or not 0.0 <= value <= 1.0:
+            raise ValueError(f"{name} must be finite and between 0 and 1")
+    report_provenance: dict[int, dict] = {}
 
     peak_indices, peak_prominences = detect_peak_anchors(
         x=x,
@@ -1410,6 +1453,12 @@ def detect_bends(
     bends_tmp: list[tuple[float, int, int, int, float, FitLine | None, FitLine | None, bool]] = []
 
     for peak_idx, prom in zip(peak_indices, peak_prominences):
+        provenance = asdict(ValleyReportProvenance(
+            interpeak_rise_frac=interpeak_rise_frac,
+            interpeak_report_rise_frac=interpeak_report_rise_frac,
+            forced_valley_report_floor=forced_valley_report_floor,
+        ))
+        report_provenance[int(peak_idx)] = provenance
         rough_idx = backtrack_derivative_departure_index(
             x=x,
             abs_d=abs_d,
@@ -1433,12 +1482,22 @@ def detect_bends(
                 all_peak_indices=peak_indices,
                 rise_frac=interpeak_rise_frac,
             )
+            if valley_idx is not None:
+                provenance["valley_geometry_temperature_C"] = float(x[valley_idx])
             # x is ascending; higher-temperature onset corresponds to a larger
             # index. Allow the inter-peak valley rule only to move the onset
             # earlier in cooling order, not deeper into the transition.
             if valley_idx is not None and int(valley_idx) > int(rough_idx):
                 rough_idx = int(valley_idx)
-                forced_report_idx = int(valley_idx)
+                # Separate final qualification from the original rough point:
+                # changing a report threshold must not move fitting windows.
+                forced_report_idx = interpeak_valley_departure_index(
+                    x=x, abs_d=abs_d, peak_idx=peak_idx,
+                    all_peak_indices=peak_indices, rise_frac=interpeak_report_rise_frac,
+                )
+                provenance["forced_valley_precedence"] = forced_report_idx is not None
+                if forced_report_idx is not None:
+                    provenance["valley_qualified_report_temperature_C"] = float(x[forced_report_idx])
 
         pre_line = None
         trans_line = None
@@ -1560,6 +1619,21 @@ def detect_bends(
             bend_T = float(x[rough_idx])
             bend_idx = int(rough_idx)
 
+        provenance = report_provenance[int(peak_idx)]
+        provenance["post_derivative_cap_temperature_C"] = float(bend_T)
+        # The cap can return a forced report to a very weak valley crossing.
+        # Qualify only that provenance, moving toward the same anchor; ordinary
+        # intersections/departures must not acquire a global derivative floor.
+        qualified_idx = qualify_forced_valley_report(
+            abs_d, bend_idx, peak_idx,
+            forced=provenance["forced_valley_precedence"],
+            floor=forced_valley_report_floor,
+        )
+        if qualified_idx != bend_idx:
+            bend_idx = qualified_idx
+            bend_T = float(x[bend_idx])
+            provenance["forced_valley_floor_applied"] = True
+
         adjusted_tmp.append((bend_T, bend_idx, rough_idx, peak_idx, prom, pre_line, trans_line, used_fallback))
 
     # Convert adjusted tuples to explicit candidate records.
@@ -1601,6 +1675,7 @@ def detect_bends(
                 pre_line=pre_line,
                 transition_line=trans_line,
                 used_fallback=used_fallback,
+                valley_report=ValleyReportProvenance(**report_provenance[int(peak_idx)]),
             )
         )
 
@@ -1621,9 +1696,21 @@ def detect_bends(
             report_method=report_method,
             csv_path=csv_path,
             select_mode=select_mode,
-            rise_frac=interpeak_rise_frac,
+            rise_frac=interpeak_report_rise_frac,
             min_neighbor_peak_frac=interpeak_min_neighbor_peak_frac,
         )
+        for candidate in valley_candidates:
+            geometry_idx = interpeak_valley_departure_index(
+                x=x, abs_d=abs_d, peak_idx=candidate.peak_point_index,
+                all_peak_indices=peak_indices, rise_frac=interpeak_rise_frac,
+            )
+            candidate.valley_report = ValleyReportProvenance(
+                interpeak_rise_frac=interpeak_rise_frac,
+                interpeak_report_rise_frac=interpeak_report_rise_frac,
+                forced_valley_report_floor=forced_valley_report_floor,
+                valley_geometry_temperature_C=None if geometry_idx is None else float(x[geometry_idx]),
+                valley_qualified_report_temperature_C=candidate.temperature_C,
+            )
         candidates.extend(valley_candidates)
 
     # Reject candidates whose report point is implausibly far from the derivative
@@ -1777,6 +1864,7 @@ def detect_bends(
                 pre_line=pre_line,
                 transition_line=trans_line,
                 used_fallback=used_fallback,
+                valley_report=candidate.valley_report,
             )
         )
 
@@ -1818,6 +1906,7 @@ def write_bends_csv(path: Path, bends: Sequence[BendPoint]) -> None:
         "transition_line_intercept",
         "transition_line_n_points",
         "used_fallback",
+        *ValleyReportProvenance.__dataclass_fields__,
     ]
 
     with path.open("w", encoding="utf-8", newline="") as f:
@@ -1853,6 +1942,7 @@ def write_bends_csv(path: Path, bends: Sequence[BendPoint]) -> None:
                     "transition_line_intercept": "" if bend.transition_line is None else f"{bend.transition_line.intercept:.6g}",
                     "transition_line_n_points": "" if bend.transition_line is None else bend.transition_line.n_points,
                     "used_fallback": bend.used_fallback,
+                    **({} if bend.valley_report is None else asdict(bend.valley_report)),
                 }
             )
 
@@ -1899,6 +1989,7 @@ def write_candidates_csv(path: Path, candidates: Sequence[CandidatePoint]) -> No
         "transition_line_intercept",
         "transition_line_n_points",
         "used_fallback",
+        *ValleyReportProvenance.__dataclass_fields__,
     ]
 
     with path.open("w", encoding="utf-8", newline="") as f:
@@ -1942,6 +2033,7 @@ def write_candidates_csv(path: Path, candidates: Sequence[CandidatePoint]) -> No
                     "transition_line_intercept": "" if candidate.transition_line is None else f"{candidate.transition_line.intercept:.6g}",
                     "transition_line_n_points": "" if candidate.transition_line is None else candidate.transition_line.n_points,
                     "used_fallback": candidate.used_fallback,
+                    **({} if candidate.valley_report is None else asdict(candidate.valley_report)),
                 }
             )
 
@@ -3067,7 +3159,7 @@ def save_mgi_publication_plot(
     if not clean or show_raw:
         ax.legend(loc="best")
 
-    ax.grid(True, which="major", linestyle="--", alpha=0.18, color=grid_color)
+    ax.grid(False)
     apply_publication_axis_style(ax)
 
     xlim_source = xlim_temperature_source(x, raw_loaded)
@@ -3356,6 +3448,8 @@ def analyze_one(csv_path: Path, args: argparse.Namespace) -> AnalysisResult:
         interpeak_rise_frac=args.interpeak_rise_frac,
         interpeak_min_neighbor_peak_frac=args.interpeak_min_neighbor_peak_frac,
         max_report_peak_gap_C=args.max_report_peak_gap_C,
+        interpeak_report_rise_frac=getattr(args, "interpeak_report_rise_frac", 0.10),
+        forced_valley_report_floor=getattr(args, "forced_valley_report_floor", 0.05),
     )
 
     base_outdir = args.outdir if args.outdir is not None else csv_path.parent
@@ -3388,7 +3482,13 @@ def analyze_one(csv_path: Path, args: argparse.Namespace) -> AnalysisResult:
         limits=getattr(args, "view_limits", NONE_LIMITS),
         content_type="mgi",
         output_mode="limited-view" if getattr(args, "view_limits", NONE_LIMITS).any else "base",
-        extra={"primary_y_axis": "MGI", "derivative_y_axis_manual_limits_applied": False},
+        extra={"primary_y_axis": "MGI", "derivative_y_axis_manual_limits_applied": False,
+               "onset_reporting": {
+                   "interpeak_rise_frac": args.interpeak_rise_frac,
+                   "interpeak_report_rise_frac": getattr(args, "interpeak_report_rise_frac", 0.10),
+                   "forced_valley_report_floor": getattr(args, "forced_valley_report_floor", 0.05),
+                   "rule": "separate_valley_report_with_forced_only_floor",
+               }},
     )
 
     return AnalysisResult(

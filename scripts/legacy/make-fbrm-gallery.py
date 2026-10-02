@@ -263,7 +263,7 @@ def discover_images(root: Path, exclude_names: set[str]) -> tuple[list[GalleryIm
         return images, "per_experiment layout"
 
     # Direct project tree fallback. This is useful when running the gallery
-    # directly against /mnt/pchipram/pchip instead of an exported result package.
+    # directly against /path/to/data instead of an exported result package.
     fbrm_dirs = sorted(
         p
         for p in root.rglob("fbrm_onsets")

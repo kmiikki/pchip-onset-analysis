@@ -46,26 +46,26 @@ Examples
 
 All base images, no data links:
 
-    python bin/make-onset-gallery.py . \
+    python scripts/make-onset-gallery.py . \
         --gallery-content all \
         --gallery-view base
 
 MGI base gallery with data links:
 
-    python bin/make-onset-gallery.py . \
+    python scripts/make-onset-gallery.py . \
         --gallery-content mgi \
         --gallery-view base \
         --with-data
 
 All existing limit-view images:
 
-    python bin/make-onset-gallery.py . \
+    python scripts/make-onset-gallery.py . \
         --gallery-content all \
         --gallery-view limited
 
 Only one limit-view:
 
-    python bin/make-onset-gallery.py . \
+    python scripts/make-onset-gallery.py . \
         --gallery-content all \
         --gallery-view limited \
         --view-id x_45-57__mgi_auto__fbrm_auto
@@ -78,6 +78,7 @@ from __future__ import annotations
 import argparse
 import base64
 import html
+import json
 import mimetypes
 import os
 import shutil
@@ -1019,6 +1020,13 @@ summary {{
   font-weight: 650;
   margin: 0.2rem 0;
 }}
+.figure-card.publication {{
+  grid-column: 1 / -1;
+}}
+.figure-card.publication img {{
+  height: auto;
+  margin-left: 0;
+}}
 .filename {{
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.85rem;
@@ -1083,6 +1091,18 @@ footer {{
 """
 
 
+def publication_width_mm(image: Path) -> float | None:
+    """Use saved-renderer provenance, not a filename guess, for preview scale."""
+    try:
+        manifest = json.loads(image.with_suffix('.manifest.json').read_text())
+        if manifest.get('scientific_preparation') != 'none; saved samples and accepted results only':
+            return None
+        width = float(manifest['options']['width_mm'])
+        return width if 75 <= width <= 300 else None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
 def render_item(
     item: GalleryItem,
     *,
@@ -1120,14 +1140,19 @@ def render_item(
             title = html.escape(label_for_image(item.kind, image))
             filename = html.escape(image.name)
             rel_path = html.escape(image.as_posix())
+            width = publication_width_mm(root_abs / image)
+            card = '<div class="figure-card publication">' if width is not None else '<div class="figure-card">'
+            image_style = f' style="width:{width:g}mm"' if width is not None else ''
+            if width is not None:
+                title += f' · publication preview {width:g} mm (responsive on narrow screens)'
 
             if embed_images:
                 # Do not duplicate the large data URI in both href and src.
                 # The image itself is embedded; filename/path remain as text.
                 lines.extend(
                     [
-                        '<div class="figure-card">',
-                        f'<img src="{src}" alt="{title}">',
+                        card,
+                        f'<img src="{src}" alt="{title}"{image_style}>',
                         f'<div class="figure-title">{title}</div>',
                         f'<div class="filename">{filename}</div>',
                         f'<div class="filename">{rel_path}</div>',
@@ -1137,8 +1162,8 @@ def render_item(
             else:
                 lines.extend(
                     [
-                        '<div class="figure-card">',
-                        f'<a href="{src}"><img src="{src}" alt="{title}"></a>',
+                        card,
+                        f'<a href="{src}"><img src="{src}" alt="{title}"{image_style}></a>',
                         f'<div class="figure-title">{title}</div>',
                         f'<div class="filename"><a href="{src}">{filename}</a></div>',
                         f'<div class="filename">{rel_path}</div>',

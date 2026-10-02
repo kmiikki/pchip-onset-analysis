@@ -29,7 +29,7 @@ Image-only export gallery:
     make-mgi-fbrm-combo-gallery.py \
         --root . \
         --output mgi-fbrm-combo-gallery.html \
-        --export-image-tree /home/kim/pchip-gallery-share/mgi-fbrm-combo-gallery \
+        --export-image-tree /path/to/gallery-share/mgi-fbrm-combo-gallery \
         --force-export-overwrite \
         --open-all
 """

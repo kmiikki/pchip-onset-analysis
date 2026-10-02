@@ -90,6 +90,7 @@ from onset_view_limits import (
     add_view_limit_arguments,
     apply_signal_y_view_limits,
     apply_temperature_view_limits,
+    apply_publication_temperature_ticks,
     parse_view_limits_from_args,
     resolve_output_dir_for_limits,
     write_view_limits_json,
@@ -250,6 +251,10 @@ class CandidatePoint:
     nearest_reference_Tr_C: float | None = None
     delta_to_reference_C: float | None = None
     reference_file: str | None = None
+    nearby_stronger_factor: float = 4.0
+    nearby_stronger_rejected: bool = False
+    nearby_stronger_candidate_id: int | None = None
+    nearby_stronger_gap_C: float | None = None
 
 
 @dataclass(frozen=True)
@@ -369,6 +374,11 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     p.add_argument("--min-separation-C", type=float, default=1.0)
+    p.add_argument(
+        "--nearby-stronger-factor", type=float, default=4.0,
+        help=("Reject a weak precursor only when BOTH level and sustained shifts of a later "
+              "event exceed this factor within --min-separation-C; 0 disables for historical replay."),
+    )
 
     p.add_argument(
         "--max-search-count",
@@ -1344,6 +1354,34 @@ def index_after_progress(data: SeriesData, min_progress: float) -> int:
     return int(hits[0])
 
 
+def nearby_stronger_rejections(
+    candidates: Sequence[CandidatePoint], *, separation_C: float, factor: float = 4.0,
+) -> dict[int, int]:
+    """Identify bounded weak precursors without reranking or changing metrics.
+
+    An event that cannot be resolved from a much stronger nearby event should
+    not consume the first-valid slot. Requiring both existing shift metrics
+    avoids promoting a distant strong transition or a one-metric fluctuation.
+    Values are candidate IDs; the first qualifying later candidate is recorded.
+    """
+    if not np.isfinite(factor) or factor < 0 or 0 < factor <= 1:
+        raise ValueError("nearby_stronger_factor must be 0 (disabled) or finite and greater than 1")
+    rejected = {}
+    if factor == 0:
+        return rejected
+    for early in candidates:
+        for later in candidates:
+            gap = later.cooling_progress_C - early.cooling_progress_C
+            if (
+                0 < gap <= separation_C
+                and later.level_shift > factor * max(early.level_shift, early.level_threshold)
+                and later.sustained_shift > factor * max(early.sustained_shift, early.sustained_threshold)
+            ):
+                rejected[early.candidate_id] = later.candidate_id
+                break
+    return rejected
+
+
 def find_next_event(
     *,
     target_rank: int,
@@ -1403,15 +1441,37 @@ def find_next_event(
     if not all_candidates:
         return None, []
 
-    accepted = all_candidates[0]
+    factor = getattr(args, "nearby_stronger_factor", 4.0)
+    rejected = nearby_stronger_rejections(
+        all_candidates, separation_C=float(args.min_separation_C), factor=factor,
+    )
+    accepted = next(c for c in all_candidates if c.candidate_id not in rejected)
     accepted.status = "accepted"
     accepted.accepted = True
     accepted.final_rank = target_rank
-    accepted.reason = "selected_first_valid_event_in_measurement_order"
+    accepted.reason = (
+        "selected_first_valid_event_after_nearby_strength_qualification" if rejected
+        else "selected_first_valid_event_in_measurement_order"
+    )
 
-    for cand in all_candidates[1:]:
+    by_id = {c.candidate_id: c for c in all_candidates}
+    for cand in all_candidates:
+        cand.nearby_stronger_factor = factor
+        if cand is accepted:
+            continue
         cand.status = "rejected"
-        cand.reason = f"not_selected_for_T{target_rank}_after_earlier_valid_event"
+        if cand.candidate_id in rejected:
+            later = by_id[rejected[cand.candidate_id]]
+            cand.nearby_stronger_rejected = True
+            cand.nearby_stronger_candidate_id = later.candidate_id
+            cand.nearby_stronger_gap_C = later.cooling_progress_C - cand.cooling_progress_C
+            cand.reason = (
+                f"bounded_nearby_stronger: candidate {later.candidate_id} within "
+                f"{args.min_separation_C:g} C exceeds both level and sustained "
+                f"shift qualifications by factor {factor:g}"
+            )
+        else:
+            cand.reason = f"not_selected_for_T{target_rank}_after_earlier_valid_event"
         cand.acceptance_mode = f"rejected_{cand.acceptance_mode}"
 
     return accepted, all_candidates
@@ -1731,6 +1791,8 @@ def write_params(path: Path, args: argparse.Namespace, data: SeriesData, refs: S
             "refine_window_C": args.refine_window_C,
             "persistent_points": args.persistent_points,
             "min_separation_C": args.min_separation_C,
+            "nearby_stronger_factor": getattr(args, "nearby_stronger_factor", 4.0),
+            "nearby_stronger_rule": "both_shift_metrics_within_min_separation_before_first_valid",
         },
         "reference_onsets": [asdict(ref) for ref in refs],
         "reference_plotting": {
@@ -1919,6 +1981,7 @@ def setup_x_axis(ax: plt.Axes, args: argparse.Namespace, xlim_source: np.ndarray
 
 def apply_publication_axis_style(ax: plt.Axes, *, legend: bool = True) -> None:
     """Apply publication-friendly axis styling."""
+    apply_publication_temperature_ticks(ax)
     ax.tick_params(axis="both", labelsize=11)
     ax.xaxis.label.set_size(13)
     ax.yaxis.label.set_size(13)
@@ -2238,6 +2301,7 @@ def plot_publication(
             getattr(args, "view_limits", NONE_LIMITS).fbrm_y,
         )
     ax.legend(loc="best")
+    apply_publication_temperature_ticks(ax)
     fig.tight_layout()
     fig.savefig(path, bbox_inches="tight")
     plt.close(fig)
@@ -2506,7 +2570,7 @@ def save_fbrm_publication_plot(
     if not clean or show_raw:
         ax.legend(loc="best")
 
-    ax.grid(True, which="major", linestyle="--", alpha=0.18, color=grid_color)
+    ax.grid(False)
     ax.grid(False, which="minor")
     x_limits = apply_temperature_view_limits(
         ax,

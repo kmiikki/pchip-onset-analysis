@@ -19,7 +19,7 @@ Expected project structure
 --------------------------
 
 Project root:
-  bin/
+  scripts/
     xy-pchip.py
     bw-pchip-onsets-t1t2.py
     fbrm-onsets.py
@@ -29,7 +29,7 @@ Project root:
     onset_config.py
 
 Experiments:
-  20250305_ex_1/tl/roi/rgb/analysis/
+  20990101_ex_99/tl/roi/rgb/analysis/
     rgb-tr.csv
     ts-fbrm-tr.csv
     merged_rgb_counts.csv
@@ -44,29 +44,29 @@ Typical use
 -----------
 
 # Show what would be run.
-python bin/run-onset-workflow.py --dry-run
+python scripts/run-onset-workflow.py --dry-run
 
 # Clean old generated outputs by archiving them, then run the workflow.
-python bin/run-onset-workflow.py --run --clean-mode archive
+python scripts/run-onset-workflow.py --run --clean-mode archive
 
 # Run only one experiment.
-python bin/run-onset-workflow.py --run --experiments 20250305_ex_1
+python scripts/run-onset-workflow.py --run --experiments 20990101_ex_99
 
 # Run only selected steps.
-python bin/run-onset-workflow.py --run --steps pchip,mgi,fbrm,combo
+python scripts/run-onset-workflow.py --run --steps pchip,mgi,fbrm,combo
 
 # If mgi is selected and required PCHIP CSVs are missing, the runner
 # automatically generates the missing PCHIP prerequisites by default.
-python bin/run-onset-workflow.py --run --steps mgi
+python scripts/run-onset-workflow.py --run --steps mgi
 
 # FBRM runs from ts-fbrm-tr.csv and writes analysis/fbrm_onsets/.
 # MGI/PCHIP reference-onsets are passed by default when available. Plot-level
 # grouping in fbrm-onsets.py keeps overlapping RAW/SG reference lines readable.
-python bin/run-onset-workflow.py --run --steps fbrm
+python scripts/run-onset-workflow.py --run --steps fbrm
 
 # Combo is a post-analysis figure step. It reads existing MGI/PCHIP and FBRM
 # onset outputs and writes analysis/combo/.
-python bin/run-onset-workflow.py --run --steps combo
+python scripts/run-onset-workflow.py --run --steps combo
 
 # The pchip step generates the RAW+PCHIP branch from rgb-tr.csv and, when
 # available, the SG+PCHIP branch from rgb-tr-sg.csv. Missing SG input is logged
@@ -74,7 +74,7 @@ python bin/run-onset-workflow.py --run --steps combo
 
 # Generate document/gallery-oriented diagnostic aspect ratio if supported by
 # the called scripts.
-python bin/run-onset-workflow.py --run --same-aspect-diagnostics
+python scripts/run-onset-workflow.py --run --same-aspect-diagnostics
 
 Safety principles
 -----------------
@@ -159,7 +159,13 @@ def parse_args() -> argparse.Namespace:
         "--project-root",
         type=Path,
         default=Path.cwd(),
-        help="Project root. Default is current working directory.",
+        help="Active code repository root containing scripts/. Default is current working directory.",
+    )
+    parser.add_argument(
+        "--data-root",
+        type=Path,
+        default=None,
+        help="Experiment/data root. Defaults to --project-root for single-tree usage.",
     )
     parser.add_argument(
         "--python",
@@ -178,7 +184,7 @@ def parse_args() -> argparse.Namespace:
         "--experiments",
         nargs="+",
         default=None,
-        help="Optional experiment directory names to run, for example 20250305_ex_1.",
+        help="Optional experiment directory names to run, for example 20990101_ex_99.",
     )
     parser.add_argument(
         "--exclude-experiments",
@@ -267,7 +273,7 @@ def parse_args() -> argparse.Namespace:
             "{python} {bin}/xy-pchip.py "
             "--csv {rgb_tr_sg} "
             "--xcol {pchip_xcol} "
-            "--ycol {pchip_ycol} "
+            "--ycol BW_smooth "
             "--outstem {pchip_sg_outstem} "
             "--reverse-x "
             "--save-csv"
@@ -331,7 +337,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--gallery-template",
-        default="{python} {bin}/make-onset-gallery.py {project_root}",
+        default="{python} {bin}/make-onset-gallery.py {data_root}",
         help="Command template for gallery step. Gallery is run once, not per experiment.",
     )
 
@@ -343,6 +349,8 @@ def parse_args() -> argparse.Namespace:
     )
 
     args = parser.parse_args()
+    if args.data_root is None:
+        args.data_root = args.project_root
 
     if not args.dry_run and not args.run:
         args.dry_run = True
@@ -395,14 +403,12 @@ def format_template(template: str, context: Mapping[str, str]) -> list[str]:
 
 
 def looks_like_project_root(root: Path) -> bool:
-    return (root / "bin").is_dir() and any(
-        p.is_dir() and "_ex_" in p.name for p in root.iterdir()
-    )
+    return (root / "scripts").is_dir()
 
 
-def iter_experiments(project_root: Path) -> Iterable[Path]:
+def iter_experiments(data_root: Path) -> Iterable[Path]:
     """Yield experiment directories discovered by naming convention."""
-    for path in sorted(project_root.iterdir()):
+    for path in sorted(data_root.iterdir()):
         if not path.is_dir() or path.is_symlink():
             continue
         if "_ex_" not in path.name:
@@ -410,14 +416,14 @@ def iter_experiments(project_root: Path) -> Iterable[Path]:
         yield path
 
 def discover_experiments(args: argparse.Namespace) -> list[Experiment]:
-    project_root = args.project_root.resolve()
+    data_root = args.data_root.resolve()
 
     requested = set(args.experiments or [])
     excluded = set(args.exclude_experiments or [])
 
     found: list[Experiment] = []
 
-    for exp_root in iter_experiments(project_root):
+    for exp_root in iter_experiments(data_root):
         if requested and exp_root.name not in requested:
             continue
         if exp_root.name in excluded:
@@ -457,7 +463,7 @@ def discover_experiments(args: argparse.Namespace) -> list[Experiment]:
 
 
 def ensure_script_exists(project_root: Path, script_name: str) -> Path:
-    script_path = project_root / "bin" / script_name
+    script_path = project_root / "scripts" / script_name
     if not script_path.is_file():
         raise FileNotFoundError(f"Required script missing: {script_path}")
     return script_path
@@ -715,11 +721,13 @@ def onset_config_state_line(args: argparse.Namespace, exp: Experiment) -> str:
 
 def make_context(args: argparse.Namespace, exp: Experiment | None = None) -> dict[str, str]:
     project_root = args.project_root.resolve()
-    bin_dir = project_root / "bin"
+    data_root = args.data_root.resolve()
+    bin_dir = project_root / "scripts"
 
     context: dict[str, str] = {
         "python": q(args.python),
         "project_root": q(project_root),
+        "data_root": q(data_root),
         "bin": q(bin_dir),
         "pchip_xcol": q(args.pchip_xcol),
         "pchip_ycol": q(args.pchip_ycol),
@@ -730,12 +738,14 @@ def make_context(args: argparse.Namespace, exp: Experiment | None = None) -> dic
 
         pchip_outstem = args.pchip_outstem.format(
             project_root=project_root,
+            data_root=data_root,
             experiment=exp.root,
             analysis=exp.analysis_dir,
             name=exp.name,
         )
         pchip_sg_outstem = args.pchip_sg_outstem.format(
             project_root=project_root,
+            data_root=data_root,
             experiment=exp.root,
             analysis=exp.analysis_dir,
             name=exp.name,
@@ -853,6 +863,7 @@ def write_log_header(log_file, *, args: argparse.Namespace, experiments: Sequenc
     log_file.write("=" * 80 + "\n")
     log_file.write(f"started_at: {datetime.now().isoformat(timespec='seconds')}\n")
     log_file.write(f"project_root: {args.project_root.resolve()}\n")
+    log_file.write(f"data_root: {args.data_root.resolve()}\n")
     log_file.write(f"mode: {'run' if args.run else 'dry-run'}\n")
     log_file.write(f"steps: {','.join(args.steps)}\n")
     log_file.write(f"clean_mode: {args.clean_mode}\n")
@@ -997,7 +1008,7 @@ def run_clean_if_requested(
         str(clean_script),
         "--archive",
         "--project-root",
-        str(project_root),
+        str(args.data_root.resolve()),
     ]
 
     if args.experiments:
@@ -1565,13 +1576,14 @@ def run_gallery_step(
     )
 
     if status == "ok" and args.run:
-        galleries_dir = project_root / "galleries"
+        galleries_dir = args.data_root.resolve() / "galleries"
         if galleries_dir.exists():
             marker = galleries_dir / ".generated-by-onset-workflow.json"
             payload = {
                 "generated_by": SCRIPT_NAME,
                 "generated_at": now_iso(),
                 "project_root": str(project_root),
+                "data_root": str(args.data_root.resolve()),
                 "step": "gallery",
                 "command": list(cmd),
             }
@@ -1585,6 +1597,8 @@ def main() -> int:
     args._onset_config_cache = {}
     project_root = args.project_root.resolve()
     args.project_root = project_root
+    data_root = args.data_root.resolve()
+    args.data_root = data_root
 
     if not project_root.is_dir():
         print(f"[error] project root is not a directory: {project_root}", file=sys.stderr)
@@ -1592,10 +1606,13 @@ def main() -> int:
 
     if not looks_like_project_root(project_root):
         print(
-            "[error] project root does not look like a PCHIP snapshot "
-            "(expected bin/ and *_ex_* experiment directories).",
+            "[error] project root must contain the active scripts/ directory.",
             file=sys.stderr,
         )
+        return 2
+
+    if not data_root.is_dir():
+        print(f"[error] data root is not a directory: {data_root}", file=sys.stderr)
         return 2
 
     required_scripts = [
@@ -1628,6 +1645,7 @@ def main() -> int:
         write_log_header(log_file, args=args, experiments=experiments)
 
         print(f"Project root: {project_root}")
+        print(f"Data root: {data_root}")
         print(f"Mode: {'run' if args.run else 'dry-run'}")
         print(f"Steps: {','.join(args.steps)}")
         print(f"Auto prerequisites: {'on' if args.auto_prerequisites else 'off'}")

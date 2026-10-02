@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 import numpy as np
-from matplotlib.ticker import MultipleLocator, NullLocator
+from matplotlib.ticker import MaxNLocator, MultipleLocator, NullLocator
 
 
 @dataclass(frozen=True)
@@ -230,6 +230,18 @@ def apply_temperature_view_limits(
     else:
         ax.set_xlim(x_lo, x_hi)
     return x_lo, x_hi
+
+
+def apply_publication_temperature_ticks(ax) -> None:
+    """Choose publication major ticks from display span; never change limits/data."""
+    left, right = ax.get_xlim()
+    span = abs(right - left)
+    step = next((step for ceiling, step in ((2.5, .5), (6, 1), (15, 2), (40, 5))
+                 if span <= ceiling), 10)
+    # Avoid hundreds of ticks on unusually wide temperature axes.
+    locator = MultipleLocator(step) if span <= 100 else MaxNLocator(nbins=8)
+    ax.xaxis.set_major_locator(locator)
+    ax.xaxis.set_minor_locator(NullLocator())
 
 
 def visible_x_mask(x: np.ndarray | Sequence[float], x_limits: tuple[float, float]) -> np.ndarray:
