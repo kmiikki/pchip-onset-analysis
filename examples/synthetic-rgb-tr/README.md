@@ -10,7 +10,7 @@ Initial input:
 
 ```text
 rgb-tr.csv
-````
+```
 
 Generated SG-preprocessing output:
 
@@ -59,16 +59,20 @@ rgb-tr.csv
 From this directory:
 
 ```bash
-../../scripts/tr-bw-sg.py -quiet
-../../scripts/run-bw-pchip-workflow.py --execute
+python3 ../../scripts/tr-bw-sg.py -quiet
+python3 ../../scripts/run-bw-pchip-workflow.py --execute \
+  --xy-pchip ../../scripts/xy-pchip.py \
+  --onset-script ../../scripts/bw-pchip-onsets-t1t2.py
 ```
 
-If the scripts are available in your `PATH`, use:
+Explicit script paths keep both workflow stages within this clone instead of
+resolving similarly named tools from `PATH`. Scientific parameters use the
+normal defaults and the existing `pchip/onset-config.ini`.
 
-```bash
-tr-bw-sg.py -quiet
-run-bw-pchip-workflow.py --execute
-```
+The refreshed bends CSVs and `view-limits.json` include the current valley
+reporting provenance. Accepted synthetic T1/T2 results are unchanged. Committed
+logs and reports use repository-relative paths and a neutral `python3` interpreter
+name; their command working directories are relative to the repository root.
 
 ## Static gallery
 

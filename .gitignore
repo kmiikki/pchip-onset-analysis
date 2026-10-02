@@ -38,3 +38,11 @@ scripts.archive-*/
 # pchip/ result directories are ignored by default.
 !examples/synthetic-rgb-tr/pchip/
 !examples/synthetic-rgb-tr/pchip/**
+
+# Private inputs and rendering/runtime artifacts
+generated/
+data/
+ram
+final/
+tmp/
+logs/

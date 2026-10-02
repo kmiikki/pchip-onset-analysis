@@ -1,20 +1,28 @@
 # Documentation
 
-This directory contains supplementary documentation and figures used by the repository README.
+## Core methods
 
-## Pipeline documentation
+- [MGI/PCHIP onset analysis](mgi-onsets.md): primary implementation reference, CLI and reproducibility requirements.
+- [FBRM onset analysis](fbrm-onsets.md): independent sequential detector and preparation contract.
+- [PCHIP construction](xy-pchip-algorithm.md): robust binning and interpolation.
+- [PCHIP CLI](xy-pchip.md): input selection, parameters and output naming.
+- [Current method changes](current-method.md): concise qualification and replay update summary.
 
-- `pipeline.md` describes the repository-level PCHIP / MGI / FBRM analysis workflow.
-- `pipeline.mmd` contains the standalone Mermaid source for the pipeline diagram embedded in `pipeline.md`.
+## Workflow
 
-The pipeline documentation describes the final computational workflow and uses repository-level Mermaid documentation rather than manuscript figures.
+- [Pipeline](pipeline.md) and [Mermaid source](pipeline.mmd): scientific branches and downstream outputs.
+- [Script inventory](scripts.md): active tools, preprocessing, helpers and legacy classification.
+- [Synthetic example](../examples/synthetic-rgb-tr/README.md): reproducible public MGI example.
 
-## Script and tool documentation
+## Rendering and review
 
-- `scripts.md` summarizes the repository scripts and their roles.
-- `fbrm-onsets.md` describes FBRM Total Counts onset detection, inputs, parameters, and output files.
-- `xy-pchip.md` documents the `xy-pchip.py` command-line tool.
-- `xy-pchip-algorithm.md` describes the robust binning and PCHIP interpolation algorithm used by `xy-pchip.py`.
+- [Offline analysis galleries](gallery.md): discovery, synthetic screenshot and portable ZIP export.
+- [Publication and supplementary rendering](publication-rendering.md): saved-result contracts and shown/hidden variants.
+
+## Repository and release policy
+
+- [Publication policy](publication-policy.md): public/private boundaries and immutable references.
+- [Integration review](integration-review.md): transferred/excluded components and remaining source-help follow-up.
 
 ## Figures
 

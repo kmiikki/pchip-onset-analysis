@@ -35,7 +35,10 @@ python xy-pchip.py --csv data.csv --xcol "Tr (°C)" --ycol BW --grid --save-csv
 * `<stem>-pchip.png` — PCHIP plot
 * `<stem>-pchip.csv` — optional CSV export
 
-The output *stem* is automatically derived from the input filename (e.g. `data.csv → data-pchip.*`).
+With an explicit `--outstem result`, the outputs are exactly `result.png` and
+(optional) `result.csv`; another `-pchip` suffix is not appended.
+
+The default output *stem* is automatically derived from the input filename (e.g. `data.csv → data-pchip.*`).
 
 ---
 
@@ -68,14 +71,14 @@ The full mathematical and implementation details are described in [xy-pchip-algo
 ## 🧪 Example
 
 ```bash
-python xy-pchip.py ex4_data.csv --xcol "Tr (°C)" --ycol BW --grid \
+python xy-pchip.py synthetic-data.csv --xcol "Tr (°C)" --ycol BW --grid \
   --reverse-x --pchip-color k --pchip-lw 1.0 --save-csv
 ```
 
 Result:
 
-* `ex4_data-pchip.png` — 300 dpi plot with black PCHIP line and grid
-* `ex4_data-pchip.csv` — PCHIP-interpolated curve with same column names as input
+* `synthetic-data-pchip.png` — 300 dpi plot with black PCHIP line and grid
+* `synthetic-data-pchip.csv` — PCHIP-interpolated curve with same column names as input
 
 ---
 

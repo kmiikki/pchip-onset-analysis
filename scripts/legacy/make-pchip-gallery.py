@@ -22,7 +22,7 @@ Two use cases are supported:
        python3 make-pchip-gallery.py \
            --root . \
            --output pchip-gallery.html \
-           --export-image-tree /mnt/nvme4tb/pchip-gallery-share
+           --export-image-tree /path/to/gallery-share
 
    The script copies only gallery images into the export directory, preserving
    the original relative directory structure, and writes a matching HTML gallery

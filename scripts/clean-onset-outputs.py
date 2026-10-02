@@ -24,20 +24,20 @@ Typical use
 cd $PROJECT_ROOT
 
 # Show what would be archived/removed.
-python bin/clean-onset-outputs.py --dry-run
+python scripts/clean-onset-outputs.py --dry-run
 
 # Safest real cleanup: move generated workflow outputs under project root.
-python bin/clean-onset-outputs.py --archive
+python scripts/clean-onset-outputs.py --archive
 
 # Destructive cleanup, only for exceptional cases.
-python bin/clean-onset-outputs.py --delete --confirm-delete-new-workflow-outputs
+python scripts/clean-onset-outputs.py --delete --confirm-delete-new-workflow-outputs
 
 # Restore an archive created by --archive. By default, existing targets are
 # not overwritten; only missing targets are restored.
-python bin/clean-onset-outputs.py --restore _cleanup_archive/cleanup-YYYYMMDD_HHMMSS
+python scripts/clean-onset-outputs.py --restore _cleanup_archive/cleanup-YYYYMMDD_HHMMSS
 
 # Preview restore without modifying anything.
-python bin/clean-onset-outputs.py --restore _cleanup_archive/cleanup-YYYYMMDD_HHMMSS --restore-dry-run
+python scripts/clean-onset-outputs.py --restore _cleanup_archive/cleanup-YYYYMMDD_HHMMSS --restore-dry-run
 
 Scope
 -----
@@ -111,7 +111,7 @@ PROJECT_ROOT_TARGETS = {
 # "/" as an ordinary character. That would also match files below
 # analysis/pchip/, for example:
 #
-#   20250305_ex_1/tl/roi/rgb/analysis/pchip/bw-pchip-workflow.log
+#   20990101_ex_99/tl/roi/rgb/analysis/pchip/bw-pchip-workflow.log
 #
 # Such files are generated workflow outputs and are safe cleanup targets.
 # Therefore the protected-path logic below is structural and only protects
@@ -239,7 +239,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Limit cleanup to specific experiment directory names, for example "
-            "20250305_ex_1 20250313_ex_4. Does not affect project-root galleries."
+            "20990101_ex_99 20990101_ex_99. Does not affect project-root galleries."
         ),
     )
     parser.add_argument(
@@ -382,7 +382,7 @@ def directory_stats(path: Path) -> tuple[int, int, int]:
 
 def looks_like_project_root(root: Path) -> bool:
     """Basic sanity check to avoid running from an accidental wrong directory."""
-    if not (root / "bin").is_dir():
+    if not (root / "scripts").is_dir():
         return False
 
     experiment_dirs = [
@@ -750,7 +750,7 @@ def restore_archive(
         # The archive manifest stores archive_path relative to the original
         # project root, for example:
         #
-        #   _cleanup_archive/cleanup-20260618_102452/20250305_ex_1/.../pchip
+        #   _cleanup_archive/cleanup-20260618_102452/20990101_ex_99/.../pchip
         #
         # If the user copies the whole archive directory for a restore test, that
         # manifest still points to the original archive. Therefore the selected
@@ -848,7 +848,7 @@ def main() -> int:
     if not args.allow_untrusted_root and not looks_like_project_root(project_root):
         print(
             "[error] project root does not look like a PCHIP snapshot "
-            "(expected bin/ and *_ex_* experiment directories).",
+            "(expected scripts/ and *_ex_* experiment directories).",
             file=sys.stderr,
         )
         print(

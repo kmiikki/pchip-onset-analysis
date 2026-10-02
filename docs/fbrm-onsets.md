@@ -41,13 +41,14 @@ The detector is designed for FBRM Total Counts curves where the first crystalliz
 
 ## Basic use
 
-Run inside a directory containing `ts-fbrm-tr.csv`:
+Run from the repository root, using a placeholder input path:
 
 ```bash
-python3 scripts/fbrm-onsets.py
+python3 scripts/fbrm-onsets.py --csv data/example/analysis/ts-fbrm-tr.csv
 ```
 
-The default output directory is:
+The default output directory is relative to the working directory (set
+`--output-dir` explicitly to place it beside a selected input):
 
 ```text
 fbrm_onsets/
@@ -85,7 +86,9 @@ Human-readable text summary of the run.
 
 ### PNG plots
 
-The script writes three plots:
+The default script writes three plots; `--publication-plots` additionally writes
+eight `fbrm-onset-publication-{clean,main,onsets,onsets-clean}-{color,mono}.png` variants
+and shared `view-limits.json` records display bounds. The default plots are:
 
 ```text
 fbrm-onset-publication.png
@@ -97,16 +100,18 @@ The publication plot shows the raw and smoothed Total Counts signal with accepte
 
 ## Options
 
-By default, the script reports at most two accepted FBRM onsets:
+When `--onsets` is omitted, `[FBRM] onsets` in the inferred or explicit
+`--analysis-dir` configuration supplies the maximum (initial default 2).
+`--onsets 0` requests no accepted FBRM onsets, unlike the MGI zero-count mode.
 
 ```bash
-python3 scripts/fbrm-onsets.py
+python3 scripts/fbrm-onsets.py --csv data/example/analysis/ts-fbrm-tr.csv
 ```
 
 More onsets can be requested explicitly:
 
 ```bash
-python3 scripts/fbrm-onsets.py --onsets 3
+python3 scripts/fbrm-onsets.py --csv data/example/analysis/ts-fbrm-tr.csv --onsets 3
 ```
 
 This does not force three onsets. It reports 0..N accepted onsets, where N is the requested maximum.
@@ -131,7 +136,9 @@ The column names can be changed with command-line options if needed.
 
 ## Repository version notes
 
-The repository version of `scripts/fbrm-onsets.py` is the current v14.6 workflow version.
+The current source header and saved method identifiers still use v14.6
+(`fbrm_total_counts_sequential_v14_6`), including the bounded precursor update.
+Use the Git revision and saved parameters, not this label alone, to identify the implementation.
 
 Compared with earlier standalone FBRM onset versions, this repository version also supports:
 
@@ -142,3 +149,44 @@ Compared with earlier standalone FBRM onset versions, this repository version al
 - shared view-limit arguments and `view-limits.json` output for display-only axis-limit handling.
 
 These options do not change the basic FBRM onset model: the detector preserves measurement order, uses measured/interpolated `Tr (°C)`, does not use `Tr_regular`, and reports zero to the requested maximum number of valid onsets.
+
+## Current bounded precursor qualification
+
+Before taking the first valid event, a weak event can be disqualified by a
+later event within `--min-separation-C`. Both the level shift and sustained
+shift must strictly exceed `--nearby-stronger-factor` times the larger of the
+early metric and its corresponding threshold. The default factor is 4;
+0 disables this qualification for historical comparison. A distant stronger
+event cannot suppress an earlier event, and one strong metric is insufficient.
+The first surviving event retains the existing sequential selection rule.
+Candidate exports identify the rejecting candidate and cooling-progress gap.
+This changes selection qualification, not cooling preparation or SG smoothing.
+
+## Preparation and parameter contract
+
+`--input` (alias `--csv`) defaults to `ts-fbrm-tr.csv`; `--xcol` and `--ycol`
+can override detected columns. `--order input` preserves row order by default;
+`--order time` explicitly sorts by a supplied/detected time column, and
+`--reverse-input` explicitly reverses loading order. Neither sorts by temperature.
+Cooling start defaults to `--cooling-start auto`; `max-temp`, `row` and `none`
+are explicit alternatives. These options are scientific preparation choices.
+
+The first raw Total Counts sample reaching `--max-search-count 10000`
+(alias `--max-valid-count`) ends the search prefix, excluding the crossing sample
+and everything after it. Zero disables this cutoff. It is an analysis/search
+reliability limit, not a universal display maximum or independently established
+instrument-validity boundary. Default SG uses `--savgol-window 101` and
+`--savgol-polyorder 3`, with existing short-sequence adjustment. The analysis
+prefix and outside-search context are smoothed separately; no SG kernel crosses
+the cutoff. `--plot-full-data` may display outside-search context without
+extending the onset search. Diagnostic derivatives are computed per sample.
+
+For bounded precursor qualification, the later cooling-progress gap must be
+positive and at most `--min-separation-C` (default 1.0 °C). The factor must be
+finite and greater than 1, or exactly 0 to disable. See the rule above and
+[current changes](current-method.md#fbrm-remains-a-separate-sequential-method).
+
+Use `python3 scripts/fbrm-onsets.py --help` for the complete CLI. Display-only
+limits and optional reference-onset overlays do not alter candidate selection.
+For rendering existing results without detection, see
+[saved-result FBRM replay](publication-rendering.md#fbrm-and-combo-contracts).

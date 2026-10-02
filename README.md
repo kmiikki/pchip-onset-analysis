@@ -12,8 +12,12 @@ galleries that can be checked before scientific interpretation.
 
 ## 🔗 Quick links
 
+- **MGI/PCHIP onset method:** [docs/mgi-onsets.md](docs/mgi-onsets.md)
+
 - **Workflow overview:** [`docs/pipeline.md`](docs/pipeline.md)
 - **Script overview:** [`docs/scripts.md`](docs/scripts.md)
+- **Saved-result publication/supplementary rendering:** [documentation](docs/publication-rendering.md)
+- **Public/private release policy:** [documentation](docs/publication-policy.md)
 - **Gallery generation:** [`docs/gallery.md`](docs/gallery.md)
 - **FBRM onset detector:** [`docs/fbrm-onsets.md`](docs/fbrm-onsets.md)
 - **PCHIP algorithm notes:** [`docs/xy-pchip-algorithm.md`](docs/xy-pchip-algorithm.md)
@@ -43,7 +47,7 @@ MGI/PCHIP diagnostic figures:
   <img src="docs/figures/sg-pchip-diagnostic.png" alt="MGI SG PCHIP diagnostic" width="48%">
 </p>
 
-Static offline gallery:
+Static offline gallery of the current synthetic example (10 MGI/PCHIP images):
 
 ![Onset analysis gallery](docs/figures/gallery-screenshot.png)
 
@@ -65,6 +69,7 @@ pandas
 matplotlib
 scipy
 openpyxl
+opencv-python-headless
 ```
 
 ---
@@ -220,6 +225,28 @@ For the full script list and directory-discovery details, see
 [`docs/scripts.md`](docs/scripts.md).
 
 ---
+
+## Saved-result publication and supplementary rendering
+
+See [current method and parameter rules](docs/current-method.md) and
+[publication/supplementary commands](docs/publication-rendering.md).
+The MGI and FBRM production detectors are distinct methods; FBRM does not
+use the experimental PCHIP adapter. Rendering never selects new onsets.
+
+Run the synthetic regression suite with:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+For separate code and data trees, `--project-root` identifies this repository
+(with `scripts/`) and `--data-root` identifies the experiment tree. When omitted,
+the data root equals the project root. The legacy `{bin}` template variable
+now resolves to the active repository `scripts/` directory.
+
+Only synthetic examples belong in this public repository. Keep private inputs,
+scientific outputs, publication PNGs, manifests and review exports outside Git.
+See [publication policy](docs/publication-policy.md).
 
 ## 🧭 Workflow documentation
 

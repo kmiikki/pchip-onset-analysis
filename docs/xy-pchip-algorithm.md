@@ -1,6 +1,7 @@
 # Algorithm: Robust Binning + Shape-Preserving PCHIP Interpolation
 
-This document describes the algorithm used in **`xy-pchip.py`** to transform noisy `x–y` profile data into a shape-preserving PCHIP-interpolated curve suitable for quantitative analysis and visualization.
+This document describes the algorithm used in **`xy-pchip.py`** to transform noisy `x–y` profile data into a shape-preserving PCHIP-interpolated curve suitable for quantitative analysis and visualization. Downstream onset selection
+is documented separately in [mgi-onsets.md](mgi-onsets.md).
 
 ---
 
@@ -53,7 +54,11 @@ $$
 $$
 
 where **B** is the number of bins (at least 5).
-Duplicate edges are removed to prevent degenerate bins.
+Duplicate edges are removed to prevent degenerate bins. Assignment uses
+`np.digitize(x, bins=edges[1:-1], right=True)`: an interior boundary belongs
+to the bin on its left. With unique edges indexed 0 through K, bin 0 includes
+`edges[0] <= x <= edges[1]`; later bins b include
+`edges[b] < x <= edges[b+1]`. Both outer extrema are retained.
 
 ### 3.2 Aggregation per bin
 
@@ -72,7 +77,8 @@ These (x_b, y_b) points form the *binned series*.
 
 ### 4.1 Concept
 
-The **Piecewise Cubic Hermite Interpolating Polynomial (PCHIP)** creates an interpolated curve that passes through all (x_b, y_b) points while preserving monotonicity and avoiding overshoot.
+The **Piecewise Cubic Hermite Interpolating Polynomial (PCHIP)** creates an interpolated curve that passes through all (x_b, y_b) points while preserving local monotonicity and avoiding interpolation overshoot. A
+nonmonotonic input signal is not made globally monotonic.
 
 Given ascending x_b values, PCHIP constructs cubic polynomials p_k(x) on each interval [x_k, x_{k+1}] such that:
 
@@ -103,13 +109,17 @@ The script generates:
 * **Plot**
 
   * Raw points, binned points, and PCHIP-interpolated curve
-  * 300 dpi publication-quality PNG (`<stem>-pchip.png`)
-* **Optional CSV export** (`<stem>-pchip.csv`)
+  * 300 dpi publication-quality PNG (`<outstem>.png`)
+* **Optional CSV export** (`<outstem>.csv`)
 
   * If input X/Y names are distinct, they are preserved.
   * Otherwise, columns default to `X` and `Y`.
 
 ---
+
+The default outstem is `<input-stem>-pchip`. An explicit `--outstem result`
+writes `result.png` and, with `--save-csv`, `result.csv` without another suffix.
+The dense sample count is clamped to at least 10 in `pchip_dense()`.
 
 ## 6. Pseudocode
 
@@ -120,13 +130,14 @@ Input: csv_path, (xcol|xcoln), (ycol|ycoln), bins, dense
 2: Read CSV, coerce to numeric, drop NaN
 3: Sort by x ascending
 4: Collapse duplicate x by averaging y
-5: edges ← quantile(x, linspace(0, 1, bins+1))
+5: edges ← unique(quantile(x, linspace(0, 1, max(5, bins)+1)))
+   labels ← digitize(x, edges[1:-1], right=True)
 6: For each bin b:
-       mask ← (edges[b] ≤ x < edges[b+1])
+       mask ← (labels == b); skip empty bins
        xb[b] ← median(x[mask])
        yb[b] ← mean(y[mask])
 7: (xb, yb) ← sort_and_unique(xb, yb)
-8: x_dense ← linspace(min(xb), max(xb), dense)
+8: x_dense ← linspace(min(xb), max(xb), max(10, dense))
 9: y_dense ← PCHIP(xb, yb)(x_dense)
 10: Plot or export (x, y), (xb, yb), (x_dense, y_dense)
 ```
