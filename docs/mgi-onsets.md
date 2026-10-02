@@ -51,9 +51,9 @@ The special `--bends 0` path differs from step 9: see [T1/T2 selection](#t1t2-se
 Write prepared samples as $(T_i,I_i)$ with increasing $T_i$. `compute_derivatives()` uses `np.gradient(y, x)` followed by `np.gradient(dy_dx, x)`, not analytic derivatives of the original PCHIP polynomial:
 
 $$
-D_i=\operatorname{gradient}(I,T)_i,\qquad
+D_i=\mathrm{gradient}(I,T)_i,\qquad
 A_i=|D_i|,\qquad
-Q_i=\operatorname{gradient}(D,T)_i.
+Q_i=\mathrm{gradient}(D,T)_i.
 $$
 
 $D$ has signal-units/°C; $Q$ has signal-units/°C². Absolute slope permits anchors of either derivative sign. There is no additional sign test requiring increasing intensity during cooling. The second derivative is stored at report points; it is not an anchor, qualification, or selection criterion.
@@ -62,14 +62,14 @@ Cooling order is decreasing temperature, hence decreasing prepared-array index. 
 
 ## Candidate anchor detection
 
-`detect_peak_anchors()` defines $A_{\max}=\max_i A_i$ before edge masking. It zeros nonfinite samples and, normally, the first/last $n_e=\operatorname{round}(n f_e)$ samples, with default $f_e=0.02$. Masking applies only if $n_e>0$ and $2n_e<n$.
+`detect_peak_anchors()` defines $A_{\max}=\max_i A_i$ before edge masking. It zeros nonfinite samples and, normally, the first/last $n_e=\mathrm{round}(n f_e)$ samples, with default $f_e=0.02$. Masking applies only if $n_e>0$ and $2n_e<n$.
 
 `scipy.signal.find_peaks` receives:
 
 $$
 h_{\min}=f_h A_{\max},\qquad
 p_{\min}=f_p A_{\max},\qquad
-n_{\mathrm{sep}}=\max(1,\operatorname{round}(\Delta T_c/\delta T)),
+n_{\mathrm{sep}}=\max(1,\mathrm{round}(\Delta T_c/\delta T)),
 $$
 
 where $\delta T$ is the median absolute nonzero grid spacing, $f_h=f_p=0.05$, and $\Delta T_c=0.10$ °C. Height and prominence are separate conditions. `distance` is a sample-index distance derived from median spacing, not an exact temperature-distance check on irregular grids.
@@ -117,11 +117,11 @@ The later selection loop handles `rejected_duplicate_transition`, `not_selected_
 Its internal defaults are a 0.4 °C gap, 3.0 °C background width (converted to at least one and five samples), and
 
 $$
-\theta_D=\operatorname{median}(A_{\mathrm{bg}})
+\theta_D=\mathrm{median}(A_{\mathrm{bg}})
  +\max(6\sigma_{\mathrm{bg}},0.03A_p,1.0).
 $$
 
-Here $\sigma=1.4826\operatorname{median}|z-\operatorname{median}(z)|$, falling back to standard deviation if MAD is zero. A short background window falls back to all higher-index samples; fewer than five finite samples gives zero background/noise. The absolute `1.0` is in signal-units/°C. The returned index is the larger of this departure index and the simple fractional-backtrack index: this adjustment can move earlier/warmer, not later than that fallback.
+Here $\sigma=1.4826\mathrm{median}|z-\mathrm{median}(z)|$, falling back to standard deviation if MAD is zero. A short background window falls back to all higher-index samples; fewer than five finite samples gives zero background/noise. The absolute `1.0` is in signal-units/°C. The returned index is the larger of this departure index and the simple fractional-backtrack index: this adjustment can move earlier/warmer, not later than that fallback.
 
 For an anchor $p$, `interpeak_valley_departure_index()` considers the nearest higher-temperature retained anchor $q$. It requires a positive gap at most 2.0 °C, at least three index steps between anchors, an interior derivative minimum $v$, finite values, $A_p>A_v$, and
 
